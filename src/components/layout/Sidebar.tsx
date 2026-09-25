@@ -380,7 +380,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id={idx === 0 ? 'sidebar-first-nav-section-title' : undefined}
               className="px-3 py-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase font-mono flex items-center justify-between"
             >
-              <span>{sec.title}</span>
+              <span className="text-[13px] text-[#505a64]">{sec.title}</span>
             </div>
             <nav className="space-y-1">
               {sec.items.map((item) => {

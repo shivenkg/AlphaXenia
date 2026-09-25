@@ -932,19 +932,35 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
           </div>
 
           {/* Interactive RBAC Permission Matrix Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            {/* Header of the div */}
+            <header className="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-black text-slate-900">
-                  Role-Based Access Control (RBAC) Permission Matrix
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-indigo-700" />
+                  <h3 className="text-base font-black text-slate-900">
+                    Role-Based Access Control (RBAC) Permission Matrix
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
                   Granular functional authorization mapped across all 11 system clearance tiers.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5">
-                <div className="relative w-full sm:w-60">
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-md">
+                  11 RBAC TIERS
+                </span>
+                <span className="text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-md flex items-center gap-1">
+                  <Check className="w-3 h-3" /> ZERO-TRUST ENFORCED
+                </span>
+              </div>
+            </header>
+
+            <div className="p-5 space-y-4">
+              {/* Search & Category Filter Toolbar */}
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div className="relative w-full md:w-64">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
                   <input
                     type="text"
@@ -955,8 +971,8 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
                   />
                 </div>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 max-w-full">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">
                     Category:
                   </span>
                   {functionCategories.map((c: string) => (
@@ -975,10 +991,9 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
                   ))}
                 </div>
               </div>
-            </div>
 
-            {/* Matrix Table */}
-            <div className="overflow-x-auto border border-slate-200 rounded-xl">
+              {/* Matrix Table */}
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
@@ -1057,6 +1072,7 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
                   })}
                 </tbody>
               </table>
+            </div>
             </div>
           </div>
         </div>
