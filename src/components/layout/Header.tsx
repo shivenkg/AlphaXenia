@@ -163,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="global-header-brand-logo-btn"
               onClick={onNavigateToDashboard}
               className="flex items-center gap-3 shrink-0 text-left hover:opacity-90 transition cursor-pointer"
-              title="JS AlphaSoft VMS - Return to Operations Portal"
+              title="JS AlphaSoftXenia - Return to Operations Portal"
             >
               <JSAlphaSoftLogo darkTheme size="md" />
             </button>
@@ -171,7 +171,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="hidden sm:flex items-center gap-2 text-xs text-slate-300">
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-white/10 text-teal-200 border border-white/10">
-              Enterprise VMS Portal
+              Enterprise Visitor Management Portal
             </span>
           </div>
         </div>
