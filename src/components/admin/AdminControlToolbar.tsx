@@ -34,6 +34,9 @@ export const AdminControlToolbar: React.FC<AdminControlToolbarProps> = ({
   onToggleAutoRendering,
 }) => {
   const state = storageService.getState();
+  const activeUser = storageService.getActiveUser();
+  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const activeTenant = state.tenants.find((t) => t.id === state.activeTenantId) || state.tenants[0];
   const [resetFeedback, setResetFeedback] = useState(false);
 
   const handleTenantChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -69,19 +72,29 @@ export const AdminControlToolbar: React.FC<AdminControlToolbarProps> = ({
         {/* Tenant Selector */}
         <div className="flex items-center gap-1.5 shrink-0">
           <Building2 className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-          <select
-            id="admin-toolbar-tenant-select"
-            value={state.activeTenantId}
-            onChange={handleTenantChange}
-            className="bg-transparent text-white font-medium border-none focus:outline-none cursor-pointer pr-1 max-w-[130px] sm:max-w-[170px] xl:max-w-[210px] truncate"
-            aria-label="Active Tenant Organization"
-          >
-            {state.tenants.map((t) => (
-              <option key={t.id} value={t.id} className="bg-[#123B5D] text-white">
-                {t.name} ({t.code})
-              </option>
-            ))}
-          </select>
+          {isSuperAdmin ? (
+            <select
+              id="admin-toolbar-tenant-select"
+              value={state.activeTenantId}
+              onChange={handleTenantChange}
+              className="bg-transparent text-white font-medium border-none focus:outline-none cursor-pointer pr-1 max-w-[130px] sm:max-w-[170px] xl:max-w-[210px] truncate"
+              aria-label="Active Tenant Organization"
+            >
+              {state.tenants.map((t) => (
+                <option key={t.id} value={t.id} className="bg-[#123B5D] text-white">
+                  {t.name} ({t.code})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span
+              id="admin-toolbar-tenant-locked-display"
+              className="font-bold text-white max-w-[140px] sm:max-w-[180px] xl:max-w-[220px] truncate"
+              title={`${activeTenant.name} (${activeTenant.code})`}
+            >
+              {activeTenant.name} ({activeTenant.code})
+            </span>
+          )}
         </div>
 
         <span className="text-slate-500">/</span>

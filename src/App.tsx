@@ -207,14 +207,18 @@ export default function App() {
   const activeRole: UserRole = activeUser?.role || 'RECEPTIONIST';
   const isSuperAdmin = isSuperAdminRole(activeRole);
 
-  // Enforce access control: Hide / redirect administration control center hub for all roles except super admin profile
+  // Enforce access control: Allow Super Admin, Tenant Admin, and permitted roles to access relevant admin views
   useEffect(() => {
     const isAdminView =
       currentView === 'user_management' ||
       currentView === 'tenants' ||
       currentView === 'customization' ||
       currentView === 'admin_hub';
-    if (isAdminView && !isSuperAdmin) {
+    const canAccessAdmin =
+      isSuperAdmin ||
+      activeRole === 'TENANT_ADMIN' ||
+      storageService.hasFunctionAccess(activeUser?.id || '', currentView);
+    if (isAdminView && !canAccessAdmin) {
       setCurrentView(getAutoRenderViewForRole(activeRole));
     }
   }, [isSuperAdmin, activeRole, currentView]);
@@ -353,7 +357,7 @@ export default function App() {
           />
         )}
 
-        {/* Navigation Sidebar (hidden & collapsed by default, visible on hover, docked when pinned) */}
+        {/* Navigation Sidebar (collapsible on hover, expandable sub menus, pinned dock on burger click) */}
         <Sidebar
           currentView={currentView}
           onSelectView={(view) => {
@@ -365,24 +369,18 @@ export default function App() {
           onOpenSharePreRegModal={() => setIsShareModalOpen(true)}
           onOpenProfileModal={() => setIsProfileModalOpen(true)}
           onLogout={handleLogout}
-          isOpen={isSidebarOpen}
+          isOpen={isSidebarOpen || isSidebarPinned}
           isPinned={isSidebarPinned}
-          onTogglePin={() => {
-            setIsSidebarPinned((prev) => {
-              const next = !prev;
-              setIsSidebarOpen(next);
-              return next;
-            });
-          }}
           onClose={() => {
-            setIsSidebarPinned(false);
-            setIsSidebarOpen(false);
+            if (!isSidebarPinned) {
+              setIsSidebarOpen(false);
+            }
           }}
           onMouseEnter={handleCancelCloseSidebar}
           onMouseLeave={handleScheduleCloseSidebar}
         />
 
-        {/* Content View Router - auto-adjusts layout smoothly based on sidebar hovering and pinup */}
+        {/* Content View Router - auto-adjusts layout smoothly when sidebar is pinned */}
         <main
           id="app-main-content-viewport"
           className={`flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto w-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -534,8 +532,8 @@ export default function App() {
             <BadgePrinterView initialVisit={selectedVisitForBadge} />
           )}
 
-          {/* Dedicated Administration Views - Restricted strictly to Platform Super Admin Profile */}
-          {isSuperAdmin && currentView === 'user_management' && (
+          {/* Dedicated Administration Views */}
+          {(isSuperAdmin || activeRole === 'TENANT_ADMIN' || storageService.hasFunctionAccess(activeUser?.id || '', 'user_management')) && currentView === 'user_management' && (
             <AdminManagementView
               initialTab="users"
               onOpenSharePreRegModal={() => setIsShareModalOpen(true)}
@@ -549,7 +547,7 @@ export default function App() {
             />
           )}
 
-          {isSuperAdmin && currentView === 'tenants' && (
+          {(isSuperAdmin || activeRole === 'TENANT_ADMIN' || storageService.hasFunctionAccess(activeUser?.id || '', 'tenants')) && currentView === 'tenants' && (
             <AdminManagementView
               initialTab="tenants"
               onOpenSharePreRegModal={() => setIsShareModalOpen(true)}
@@ -563,7 +561,7 @@ export default function App() {
             />
           )}
 
-          {isSuperAdmin && currentView === 'customization' && (
+          {(isSuperAdmin || activeRole === 'TENANT_ADMIN' || storageService.hasFunctionAccess(activeUser?.id || '', 'customization')) && currentView === 'customization' && (
             <AdminManagementView
               initialTab="customization"
               onOpenSharePreRegModal={() => setIsShareModalOpen(true)}
@@ -597,11 +595,11 @@ export default function App() {
             />
           )}
 
-          {isSuperAdmin && currentView === 'whitelabel' && (
+          {(isSuperAdmin || activeRole === 'TENANT_ADMIN' || storageService.hasFunctionAccess(activeUser?.id || '', 'whitelabel')) && currentView === 'whitelabel' && (
             <CompanyLogoWhitelabelView />
           )}
 
-          {isSuperAdmin && currentView === 'roles_workflow' && (
+          {(isSuperAdmin || activeRole === 'TENANT_ADMIN' || storageService.hasFunctionAccess(activeUser?.id || '', 'roles_workflow')) && currentView === 'roles_workflow' && (
             <AdminManagementView
               initialTab="roles_workflow"
               onOpenSharePreRegModal={() => setIsShareModalOpen(true)}
@@ -615,7 +613,7 @@ export default function App() {
             />
           )}
 
-          {!isSuperAdmin &&
+          {!isSuperAdmin && activeRole !== 'TENANT_ADMIN' &&
             (currentView === 'user_management' ||
               currentView === 'tenants' ||
               currentView === 'customization' ||

@@ -12,6 +12,9 @@ import {
   CheckCircle2,
   Trash2,
   Building,
+  Building2,
+  Copy,
+  ArrowRight,
   Monitor,
   Smartphone,
   Printer,
@@ -88,25 +91,44 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
   onSuccessToast,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const state = storageService.getState();
+  const activeUser = storageService.getActiveUser();
+  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const activeTenant = storageService.getActiveTenant();
 
-  // Load current state
+  // Multi-tenant state: Select which enterprise tenant to white-label
+  // If not superadmin, strictly bound to active tenant
+  const [selectedTenantId, setSelectedTenantId] = useState<string>(() => activeTenant.id);
+  const effectiveTenantId = isSuperAdmin ? selectedTenantId : activeTenant.id;
+  const selectedTenant =
+    state.tenants.find((t) => t.id === effectiveTenantId) || activeTenant;
+
+  // Load target tenant's branding
   const [branding, setBranding] = useState<WhitelabelBranding>(() =>
-    storageService.getWhitelabelBranding()
+    storageService.getTenantWhitelabelBranding(effectiveTenantId)
   );
 
-  // Form Fields
+  // Form Fields (scoped to selectedTenant)
   const [isEnabled, setIsEnabled] = useState(branding.enabled);
   const [logoUrl, setLogoUrl] = useState(branding.logoUrl || '');
   const [logoFileName, setLogoFileName] = useState(branding.logoFileName || '');
   const [logoHeightPx, setLogoHeightPx] = useState(branding.logoHeightPx || 36);
-  const [companyName, setCompanyName] = useState(branding.companyName || 'Tata Consultancy Services');
-  const [portalTitle, setPortalTitle] = useState(branding.portalTitle || 'Enterprise Physical Security Portal');
+  const [companyName, setCompanyName] = useState(branding.companyName || selectedTenant.name);
+  const [portalTitle, setPortalTitle] = useState(branding.portalTitle || `${selectedTenant.name} Portal`);
   const [tagline, setTagline] = useState(branding.tagline || 'Zero-Trust Visitor Identity & Access Governance');
-  const [primaryColor, setPrimaryColor] = useState(branding.primaryColor || '#123B5D');
+  const [primaryColor, setPrimaryColor] = useState(
+    branding.primaryColor || selectedTenant.branding?.primaryColor || '#123B5D'
+  );
   const [headerBackground, setHeaderBackground] = useState<WhitelabelBranding['headerBackground']>(
     branding.headerBackground || 'DARK_NAVY'
   );
   const [hidePoweredBy, setHidePoweredBy] = useState(branding.hidePoweredBy || false);
+
+  // Clone Modal State
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+  const [cloneDestinationTenantId, setCloneDestinationTenantId] = useState(
+    state.tenants.find((t) => t.id !== selectedTenantId)?.id || ''
+  );
 
   // UI state
   const [activeSection, setActiveSection] = useState<'LOGO_IDENTITY' | 'TYPOGRAPHY_COLORS'>('LOGO_IDENTITY');
@@ -115,6 +137,27 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
   const [activePreviewTab, setActivePreviewTab] = useState<'HEADER' | 'LOGIN' | 'BADGE'>('HEADER');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // Sync state whenever target tenant changes
+  const loadTenantBranding = (tenantId: string) => {
+    const b = storageService.getTenantWhitelabelBranding(tenantId);
+    const targetTenant = state.tenants.find((t) => t.id === tenantId) || selectedTenant;
+    setBranding(b);
+    setIsEnabled(b.enabled);
+    setLogoUrl(b.logoUrl || '');
+    setLogoFileName(b.logoFileName || '');
+    setLogoHeightPx(b.logoHeightPx || 36);
+    setCompanyName(b.companyName || targetTenant.name);
+    setPortalTitle(b.portalTitle || `${targetTenant.name} Portal`);
+    setTagline(b.tagline || 'Zero-Trust Visitor Identity & Access Governance');
+    setPrimaryColor(b.primaryColor || targetTenant.branding?.primaryColor || '#123B5D');
+    setHeaderBackground(b.headerBackground || 'DARK_NAVY');
+    setHidePoweredBy(b.hidePoweredBy || false);
+  };
+
+  useEffect(() => {
+    loadTenantBranding(effectiveTenantId);
+  }, [effectiveTenantId]);
 
   // File drag & drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -143,7 +186,7 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
         setLogoUrl(result);
         setLogoFileName(file.name);
         setIsEnabled(true); // Automatically activate whitelabel when logo is uploaded
-        setToastMessage(`Logo "${file.name}" loaded. Click "Save & Apply" to apply globally.`);
+        setToastMessage(`Logo "${file.name}" loaded for ${selectedTenant.name}. Click "Save & Deploy" to apply.`);
         setTimeout(() => setToastMessage(null), 4000);
       }
     };
@@ -185,7 +228,7 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
     setTagline(preset.tagline);
     setPrimaryColor(preset.primaryColor);
     setIsEnabled(true);
-    setToastMessage(`Applied sample preset for ${preset.name}.`);
+    setToastMessage(`Applied sample preset for ${preset.name} onto tenant "${selectedTenant.name}".`);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -193,13 +236,13 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
     setLogoUrl('');
     setLogoFileName('');
     if (fileInputRef.current) fileInputRef.current.value = '';
-    setToastMessage('Logo removed. System will use default JS AlphaSoft branding.');
+    setToastMessage(`Logo removed for ${selectedTenant.name}. System will use default JS AlphaSoft branding.`);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
   const handleSaveWhitelabel = () => {
     setIsSaving(true);
-    const res = storageService.updateWhitelabelBranding({
+    const res = storageService.updateTenantWhitelabelBranding(effectiveTenantId, {
       enabled: isEnabled,
       logoUrl,
       logoFileName,
@@ -217,8 +260,8 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
     setTimeout(() => {
       setIsSaving(false);
       const msg = isEnabled
-        ? `Portal whitelabeled successfully for "${companyName}" with custom logo!`
-        : 'Whitelabel preferences updated (Mode: Disabled).';
+        ? `White-labeling for enterprise tenant "${selectedTenant.name}" (${selectedTenant.code}) saved & deployed successfully!`
+        : `White-label preferences updated for tenant "${selectedTenant.name}" (Mode: Disabled).`;
       setToastMessage(msg);
       if (onSuccessToast) onSuccessToast(msg);
       setTimeout(() => setToastMessage(null), 4000);
@@ -226,28 +269,43 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
   };
 
   const handleResetToFactoryBrand = () => {
-    if (confirm('Are you sure you want to reset all white-labeling and restore default JS AlphaSoft brand?')) {
-      const res = storageService.resetWhitelabelBranding();
-      setBranding(res.branding);
-      setIsEnabled(res.branding.enabled);
-      setLogoUrl(res.branding.logoUrl || '');
-      setLogoFileName('');
-      setCompanyName(res.branding.companyName);
-      setPortalTitle(res.branding.portalTitle);
-      setTagline(res.branding.tagline);
-      setPrimaryColor(res.branding.primaryColor);
-      setHeaderBackground(res.branding.headerBackground);
-      setHidePoweredBy(res.branding.hidePoweredBy || false);
-      const msg = 'Restored factory default JS AlphaSoft brand.';
+    if (
+      confirm(
+        `Are you sure you want to reset white-labeling for tenant "${selectedTenant.name}" (${selectedTenant.code}) back to default?`
+      )
+    ) {
+      storageService.resetTenantWhitelabelBranding(effectiveTenantId);
+      loadTenantBranding(effectiveTenantId);
+      const msg = `Restored default branding for tenant "${selectedTenant.name}".`;
       setToastMessage(msg);
       if (onSuccessToast) onSuccessToast(msg);
       setTimeout(() => setToastMessage(null), 4000);
     }
   };
 
+  const handleCloneBranding = () => {
+    if (!cloneDestinationTenantId || cloneDestinationTenantId === selectedTenantId) {
+      setUploadError('Please select a different destination tenant to clone branding to.');
+      return;
+    }
+    const destTenant = state.tenants.find((t) => t.id === cloneDestinationTenantId);
+    storageService.copyTenantWhitelabelBranding(selectedTenantId, cloneDestinationTenantId);
+    setIsCloneModalOpen(false);
+    const msg = `Successfully cloned white-label branding from "${selectedTenant.name}" to "${destTenant?.name}"!`;
+    setToastMessage(msg);
+    if (onSuccessToast) onSuccessToast(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleSwitchActiveTenantContext = () => {
+    storageService.setActiveContext({ tenantId: selectedTenantId });
+    setToastMessage(`Switched active operational portal session to "${selectedTenant.name}" (${selectedTenant.code})!`);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Top Banner */}
+      {/* Top Banner with Tenant Branding Context */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div className="flex items-start gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-indigo-700 text-white flex items-center justify-center shadow-md shrink-0">
@@ -255,8 +313,9 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[11px] font-extrabold uppercase tracking-wider border border-teal-200">
-                White-Labeling Engine
+              <span className="px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-800 text-[11px] font-extrabold uppercase tracking-wider border border-purple-200 flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-purple-600" />
+                <span>Super Admin Tenant White-Labeling Engine</span>
               </span>
               <span
                 className={`px-2 py-0.5 rounded-md text-[11px] font-bold border flex items-center gap-1.5 ${
@@ -270,14 +329,15 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
                     isEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'
                   }`}
                 />
-                <span>White-Label Status: {isEnabled ? 'ACTIVE' : 'DISABLED'}</span>
+                <span>{selectedTenant.code}: {isEnabled ? 'CUSTOM BRANDED' : 'SYSTEM DEFAULT'}</span>
               </span>
             </div>
-            <h1 className="text-xl font-black text-slate-900 mt-1 tracking-tight">
-              Company Logo Upload & Client Portal White-Labeling
+            <h1 className="text-xl font-black text-slate-900 mt-1 tracking-tight flex items-center gap-2 flex-wrap">
+              <span>White-Labeling for Tenant:</span>
+              <span className="text-teal-700 underline decoration-teal-300">{selectedTenant.name}</span>
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Upload your client organization's corporate logo, customize brand palette colors, headers, and portal typography.
+              Customize isolated corporate logos, brand color palettes, headers, and portal typography on a per-tenant basis.
             </p>
           </div>
         </div>
@@ -286,12 +346,24 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
         <div className="flex items-center gap-2.5 flex-wrap shrink-0">
           <button
             type="button"
+            onClick={() => {
+              setCloneDestinationTenantId(state.tenants.find((t) => t.id !== selectedTenantId)?.id || '');
+              setIsCloneModalOpen(true);
+            }}
+            className="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+            title="Clone this tenant's branding to another enterprise tenant"
+          >
+            <Copy className="w-3.5 h-3.5 text-slate-500" />
+            <span>Clone Branding</span>
+          </button>
+          <button
+            type="button"
             onClick={handleResetToFactoryBrand}
-            className="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
-            title="Reset to default JS AlphaSoft branding"
+            className="px-3.5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+            title={`Reset ${selectedTenant.name} to default system branding`}
           >
             <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Reset to Factory Brand</span>
+            <span>Reset {selectedTenant.code} Defaults</span>
           </button>
           <button
             id="save-whitelabel-branding-btn"
@@ -301,10 +373,195 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
             className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
           >
             <Check className="w-4 h-4" />
-            <span>{isSaving ? 'Applying...' : 'Save & Apply White-Label'}</span>
+            <span>{isSaving ? 'Deploying...' : `Save & Deploy for ${selectedTenant.code}`}</span>
           </button>
         </div>
       </div>
+
+      {/* Target Tenant Selector Bar */}
+      <div className="bg-[#123B5D] text-white rounded-2xl p-4 shadow-sm border border-[#0d2a42] space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <Building2 className="w-4 h-4 text-teal-300 shrink-0" />
+            <div>
+              <span className="text-xs font-bold tracking-wide uppercase text-teal-200 block">
+                Target Enterprise Tenant Partition
+              </span>
+              <span className="text-[11px] text-slate-300">
+                Select which enterprise tenant you are white-labeling and configuring:
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <label htmlFor="target-tenant-select" className="text-xs text-teal-200 font-semibold hidden sm:inline">
+              Switch Tenant:
+            </label>
+            <select
+              id="target-tenant-select"
+              value={selectedTenantId}
+              onChange={(e) => setSelectedTenantId(e.target.value)}
+              className="bg-[#0b2438] text-white border border-teal-500/50 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-xs max-w-[220px] truncate"
+            >
+              {state.tenants.map((t) => {
+                const isCustom = t.whitelabelBranding?.enabled && !!t.whitelabelBranding?.logoUrl;
+                return (
+                  <option key={t.id} value={t.id} className="bg-[#123B5D] text-white">
+                    {t.name} ({t.code}) {isCustom ? '• [Custom Logo Active]' : '• [Default Brand]'}
+                  </option>
+                );
+              })}
+            </select>
+
+            {selectedTenantId !== state.activeTenantId ? (
+              <button
+                type="button"
+                onClick={handleSwitchActiveTenantContext}
+                className="px-3 py-1.5 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-200 border border-teal-400/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                title="Switch your current operator session to view the live portal as this tenant"
+              >
+                <ArrowRight className="w-3.5 h-3.5 text-teal-300" />
+                <span>View Portal as {selectedTenant.code}</span>
+              </button>
+            ) : (
+              <span className="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Active Portal Context</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Tenant Quick-Jump Cards/Pills */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+          {state.tenants.map((t) => {
+            const isSelected = t.id === selectedTenantId;
+            const isCustom = t.whitelabelBranding?.enabled && !!t.whitelabelBranding?.logoUrl;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setSelectedTenantId(t.id)}
+                className={`p-3 rounded-xl text-left transition flex items-center justify-between gap-2.5 cursor-pointer border ${
+                  isSelected
+                    ? 'bg-white text-slate-900 border-white shadow-md ring-2 ring-teal-400'
+                    : 'bg-white/10 hover:bg-white/15 text-white border-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white shrink-0 shadow-2xs"
+                    style={{
+                      backgroundColor:
+                        t.whitelabelBranding?.primaryColor || t.branding?.primaryColor || '#123B5D',
+                    }}
+                  >
+                    {t.code.slice(0, 2)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className={`font-bold text-xs truncate ${isSelected ? 'text-[#123B5D]' : 'text-white'}`}>
+                      {t.name}
+                    </div>
+                    <div className="text-[10px] opacity-75 font-mono">
+                      {t.code} • {t.tier.replace(/_/g, ' ')}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="shrink-0 flex flex-col items-end gap-1">
+                  <span
+                    className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full uppercase ${
+                      isCustom
+                        ? isSelected
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-emerald-900/60 text-emerald-300'
+                        : isSelected
+                        ? 'bg-slate-200 text-slate-700'
+                        : 'bg-white/20 text-slate-200'
+                    }`}
+                  >
+                    {isCustom ? 'Custom' : 'Default'}
+                  </span>
+                  {isSelected && (
+                    <span className="text-[9px] font-bold text-teal-600 flex items-center gap-0.5">
+                      <Check className="w-2.5 h-2.5" /> Editing
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Clone Branding Modal */}
+      {isCloneModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col">
+            <div className="bg-[#123B5D] px-6 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2">
+                <Copy className="w-4 h-4 text-teal-300" />
+                <h3 className="text-sm font-bold">Clone White-Label Branding</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCloneModalOpen(false)}
+                className="text-slate-300 hover:text-white cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs text-[#172B3A]">
+              <div>
+                <span className="font-semibold text-slate-500 block mb-1">Source Tenant (Copying from):</span>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold flex items-center gap-2 text-[#123B5D]">
+                  <Building2 className="w-4 h-4 text-teal-600" />
+                  <span>{selectedTenant.name} ({selectedTenant.code})</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Destination Tenant (Copying to) *</label>
+                <select
+                  value={cloneDestinationTenantId}
+                  onChange={(e) => setCloneDestinationTenantId(e.target.value)}
+                  className="w-full px-3 py-2 bg-[#F4F7FA] border border-[#CBD5E1] rounded-xl text-xs font-semibold focus:outline-none focus:border-[#123B5D]"
+                >
+                  {state.tenants
+                    .filter((t) => t.id !== selectedTenantId)
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        🏢 {t.name} ({t.code})
+                      </option>
+                    ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  This will duplicate the custom logo, typography, color palette, and header styling to the destination tenant.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCloneModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloneBranding}
+                  className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Clone Branding Now</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Super Admin Whitelabel & Styling Studio Sub-Navigation */}
       <div className="flex items-center gap-2 bg-[#F4F7FA] p-1.5 rounded-2xl border border-slate-200">

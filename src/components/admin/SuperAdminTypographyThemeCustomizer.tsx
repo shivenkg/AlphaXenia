@@ -32,6 +32,7 @@ import { RealTimeThemePreviewGallery } from './RealTimeThemePreviewGallery';
 interface SuperAdminTypographyThemeCustomizerProps {
   onSuccessToast?: (msg: string) => void;
   compact?: boolean;
+  tenantId?: string;
 }
 
 const COMMON_COLOR_SWATCHES = [
@@ -70,10 +71,40 @@ const FONT_COLOR_SWATCHES = [
 export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyThemeCustomizerProps> = ({
   onSuccessToast,
   compact = false,
+  tenantId,
 }) => {
+  const activeUser = storageService.getActiveUser();
+  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const effectiveTenantId = tenantId || storageService.getActiveTenant().id;
+  const targetTenant =
+    storageService.getState().tenants.find((t) => t.id === effectiveTenantId) ||
+    storageService.getActiveTenant();
+
   const [branding, setBranding] = useState<WhitelabelBranding>(() =>
-    storageService.getWhitelabelBranding()
+    storageService.getWhitelabelBranding(effectiveTenantId)
   );
+
+  // Sync state whenever target tenant changes
+  useEffect(() => {
+    const current = storageService.getWhitelabelBranding(effectiveTenantId);
+    setBranding(current);
+    setFontFamily(current.fontFamily || 'Plus Jakarta Sans');
+    setFontStyle(current.fontStyle || 'normal');
+    setFontWeight(current.fontWeight || '500');
+    setLetterSpacing(current.letterSpacing || 'normal');
+    setTextTransform(current.textTransform || 'none');
+    setFontSizeBase(current.fontSizeBase || '14px');
+    setFontColor(current.fontColor || '#172B3A');
+    setHeadingColor(current.headingColor || '#0F172A');
+    setMutedFontColor(current.mutedFontColor || '#526575');
+    setBackgroundColor(current.backgroundColor || '#FAF7EE');
+    setSurfaceColor(current.surfaceColor || '#FFFFF0');
+    setHeaderBackground(current.headerBackground || 'DARK_NAVY');
+    setHeaderBackgroundColor(current.headerBackgroundColor || '#123B5D');
+    setForeColor(current.foreColor || current.primaryColor || '#123B5D');
+    setForeColorText(current.foreColorText || getContrastTextColor(current.foreColor || current.primaryColor || '#123B5D'));
+    setSecondaryForeColor(current.secondaryForeColor || current.secondaryColor || '#0F766E');
+  }, [effectiveTenantId]);
 
   // Typography state
   const [fontFamily, setFontFamily] = useState<string>(branding.fontFamily || 'Plus Jakarta Sans');
@@ -173,12 +204,12 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
       secondaryColor: secondaryForeColor,
     };
 
-    const res = storageService.updateWhitelabelBranding(updates);
+    const res = storageService.updateTenantWhitelabelBranding(effectiveTenantId, updates);
     setBranding(res.branding);
 
     setTimeout(() => {
       setIsSaving(false);
-      const msg = `Portal typography, background, and forecolor updated successfully! (Font: ${fontFamily}, ForeColor: ${foreColor})`;
+      const msg = `Portal typography, background, and forecolor for tenant "${targetTenant.name}" (${targetTenant.code}) updated successfully! (Font: ${fontFamily}, ForeColor: ${foreColor})`;
       setToastMessage(msg);
       if (onSuccessToast) onSuccessToast(msg);
       setTimeout(() => setToastMessage(null), 4000);
@@ -186,7 +217,11 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
   };
 
   const handleResetToDefaults = () => {
-    if (confirm('Reset typography, font colors, background, and forecolor to default Enterprise settings?')) {
+    if (
+      confirm(
+        `Reset typography, font colors, background, and forecolor for tenant "${targetTenant.name}" (${targetTenant.code}) to default Enterprise settings?`
+      )
+    ) {
       const defaultPreset = THEME_PRESETS[0];
       handleApplyPreset(defaultPreset);
     }
@@ -219,18 +254,23 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-800 text-[10px] font-extrabold uppercase tracking-wider border border-indigo-200">
-                Super Admin Styling Studio
+                {isSuperAdmin ? 'Super Admin Tenant Whitelabeling' : 'Tenant Corporate Whitelabeling'}
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 text-[10px] font-bold border border-teal-200 flex items-center gap-1">
+                <span>Tenant:</span>
+                <strong className="text-teal-900">{targetTenant.name} ({targetTenant.code})</strong>
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs font-semibold text-slate-700">
-                Active Font: <strong className="text-indigo-900">{fontFamily}</strong> ({fontWeight}, {fontStyle})
+                Font: <strong className="text-indigo-900">{fontFamily}</strong> ({fontWeight}, {fontStyle})
               </span>
             </div>
-            <h2 className="text-lg font-black text-slate-900 mt-0.5 tracking-tight">
-              Portal Typography, Font Colors, Background & ForeColor Studio
+            <h2 className="text-lg font-black text-slate-900 mt-0.5 tracking-tight flex items-center gap-2 flex-wrap">
+              <span>Tenant Typography & Theme Styling:</span>
+              <span className="text-indigo-700">{targetTenant.name}</span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Customize font families, weights, styles, canvas background, and interactive forecolor accents across the entire enterprise portal.
+              Customize font families, weights, styles, canvas surface background, and interactive forecolor accents specifically for tenant <strong>{targetTenant.name}</strong> ({targetTenant.code}).
             </p>
           </div>
         </div>
@@ -241,10 +281,10 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
             type="button"
             onClick={handleResetToDefaults}
             className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95"
-            title="Reset to default Enterprise Ivory & Navy theme"
+            title={`Reset ${targetTenant.code} to default Enterprise Ivory & Navy theme`}
           >
             <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Reset Defaults</span>
+            <span>Reset {targetTenant.code}</span>
           </button>
 
           <button
@@ -255,7 +295,7 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
             className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
           >
             <Check className="w-4 h-4" />
-            <span>{isSaving ? 'Applying Changes...' : 'Save & Apply Theme'}</span>
+            <span>{isSaving ? 'Applying Changes...' : `Save & Apply for ${targetTenant.code}`}</span>
           </button>
         </div>
       </div>
@@ -939,7 +979,7 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
                 foreColor={foreColor}
                 foreColorText={foreColorText}
                 secondaryForeColor={secondaryForeColor}
-                companyName={storageService.getWhitelabelBranding().companyName}
+                companyName={branding.companyName || targetTenant.name}
                 onFontFamilyChange={(newFont) => setFontFamily(newFont)}
               />
             </div>
@@ -1157,7 +1197,7 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
           foreColor={foreColor}
           foreColorText={foreColorText}
           secondaryForeColor={secondaryForeColor}
-          companyName={storageService.getWhitelabelBranding().companyName}
+          companyName={branding.companyName || targetTenant.name}
           onFontFamilyChange={(newFont) => setFontFamily(newFont)}
         />
       </div>

@@ -84,8 +84,72 @@ interface VMSState {
   whitelabelBranding?: WhitelabelBranding;
 }
 
+export const ALL_SIDEBAR_FUNCTION_IDS: VMSFunctionId[] = [
+  // Section 1: ADMINISTRATION & TENANTS
+  'user_management',
+  'roles_workflow',
+  'whitelabel',
+  'saas_license',
+  'tenants',
+  'customization',
+  // Section 2: OPERATIONS & WORKFLOW
+  'dashboard',
+  'reception',
+  'walkin',
+  'visitors',
+  'approvals',
+  'share_modal_action',
+  // Section 3: PASSES & FACILITY SAFETY
+  'invitations',
+  'badges',
+  'emergency',
+  // Section 4: INFRASTRUCTURE & OBSERVABILITY
+  'devices',
+  'edge',
+  'reports',
+  'audit',
+  // Section 5: ENTERPRISE ARCHITECTURE & SPECS
+  'arch_guide',
+  'blueprint',
+  'api_explorer',
+  'uat_tests',
+  'iam',
+];
+
+export const FUNCTION_ID_ALIASES: Record<string, VMSFunctionId> = {
+  reception: 'RECEPTION_DESK',
+  RECEPTION_DESK: 'reception',
+  visitors: 'VISITOR_DIRECTORY',
+  VISITOR_DIRECTORY: 'visitors',
+  invitations: 'INVITATIONS_PREREG',
+  INVITATIONS_PREREG: 'invitations',
+  approvals: 'SECURITY_APPROVALS',
+  SECURITY_APPROVALS: 'approvals',
+  badges: 'BADGE_PRINTING',
+  BADGE_PRINTING: 'badges',
+  emergency: 'EMERGENCY_ROLLCALL',
+  EMERGENCY_ROLLCALL: 'emergency',
+  devices: 'HARDWARE_DEVICES',
+  HARDWARE_DEVICES: 'devices',
+  edge: 'EDGE_OFFLINE_SYNC',
+  EDGE_OFFLINE_SYNC: 'edge',
+  reports: 'ANALYTICS_REPORTS',
+  ANALYTICS_REPORTS: 'reports',
+  audit: 'AUDIT_TRAIL',
+  AUDIT_TRAIL: 'audit',
+  user_management: 'USER_MANAGEMENT',
+  USER_MANAGEMENT: 'user_management',
+  tenants: 'TENANT_PROVISIONING',
+  TENANT_PROVISIONING: 'tenants',
+  roles_workflow: 'ROLE_PERMISSIONS',
+  ROLE_PERMISSIONS: 'roles_workflow',
+  saas_license: 'SAAS_LICENSING',
+  SAAS_LICENSING: 'saas_license',
+};
+
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
   PLATFORM_SUPER_ADMIN: [
+    ...ALL_SIDEBAR_FUNCTION_IDS,
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'INVITATIONS_PREREG',
@@ -104,6 +168,29 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'SAAS_LICENSING',
   ],
   TENANT_ADMIN: [
+    'dashboard',
+    'reception',
+    'walkin',
+    'visitors',
+    'approvals',
+    'share_modal_action',
+    'invitations',
+    'badges',
+    'emergency',
+    'devices',
+    'edge',
+    'reports',
+    'audit',
+    'user_management',
+    'tenants',
+    'roles_workflow',
+    'whitelabel',
+    'customization',
+    'arch_guide',
+    'blueprint',
+    'api_explorer',
+    'uat_tests',
+    'iam',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'INVITATIONS_PREREG',
@@ -120,6 +207,25 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'ROLE_PERMISSIONS',
   ],
   SITE_ADMIN: [
+    'dashboard',
+    'reception',
+    'walkin',
+    'visitors',
+    'approvals',
+    'share_modal_action',
+    'invitations',
+    'badges',
+    'emergency',
+    'devices',
+    'edge',
+    'reports',
+    'audit',
+    'user_management',
+    'arch_guide',
+    'blueprint',
+    'api_explorer',
+    'uat_tests',
+    'iam',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'INVITATIONS_PREREG',
@@ -134,6 +240,16 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'GOOGLE_SHEETS_SYNC',
   ],
   TENANT_SECURITY_ADMIN: [
+    'dashboard',
+    'reception',
+    'walkin',
+    'visitors',
+    'approvals',
+    'invitations',
+    'badges',
+    'emergency',
+    'devices',
+    'audit',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'SECURITY_APPROVALS',
@@ -143,6 +259,15 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'AUDIT_TRAIL',
   ],
   GATE_SUPERVISOR: [
+    'dashboard',
+    'reception',
+    'walkin',
+    'visitors',
+    'approvals',
+    'invitations',
+    'badges',
+    'emergency',
+    'devices',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'SECURITY_APPROVALS',
@@ -151,31 +276,78 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'HARDWARE_DEVICES',
   ],
   SECURITY_GUARD: [
+    'dashboard',
+    'reception',
+    'walkin',
+    'visitors',
+    'approvals',
+    'invitations',
+    'badges',
+    'emergency',
+    'devices',
+    'edge',
     'RECEPTION_DESK',
     'SECURITY_APPROVALS',
     'BADGE_PRINTING',
     'EMERGENCY_ROLLCALL',
+    'HARDWARE_DEVICES',
+    'EDGE_OFFLINE_SYNC',
   ],
   RECEPTIONIST: [
+    'dashboard',
+    'reception',
+    'walkin',
+    'visitors',
+    'approvals',
+    'share_modal_action',
+    'invitations',
+    'badges',
+    'emergency',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'INVITATIONS_PREREG',
     'BADGE_PRINTING',
   ],
   HOST_EMPLOYEE: [
+    'dashboard',
+    'visitors',
+    'approvals',
+    'share_modal_action',
+    'invitations',
     'INVITATIONS_PREREG',
     'SECURITY_APPROVALS',
   ],
   DEPARTMENT_APPROVER: [
+    'dashboard',
+    'visitors',
+    'approvals',
+    'invitations',
     'SECURITY_APPROVALS',
     'INVITATIONS_PREREG',
   ],
   COMPLIANCE_AUDITOR: [
+    'dashboard',
+    'visitors',
+    'reports',
+    'audit',
+    'edge',
+    'arch_guide',
+    'blueprint',
+    'api_explorer',
+    'uat_tests',
+    'iam',
     'AUDIT_TRAIL',
     'VISITOR_DIRECTORY',
     'ANALYTICS_REPORTS',
   ],
   DEVICE_EDGE_ADMIN: [
+    'devices',
+    'edge',
+    'emergency',
+    'reports',
+    'audit',
+    'blueprint',
+    'api_explorer',
     'HARDWARE_DEVICES',
     'EDGE_OFFLINE_SYNC',
     'BADGE_PRINTING',
@@ -184,117 +356,240 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
 };
 
 export const VMS_FUNCTION_DEFINITIONS: VMSFunctionDefinition[] = [
+  // ==========================================
+  // FUNCTION 1: ADMINISTRATION & TENANTS
+  // ==========================================
   {
-    id: 'RECEPTION_DESK',
-    name: 'Reception & Desk Check-In',
-    category: 'OPERATIONS',
-    description: 'Walk-in visitor registration, fast badge check-in, turnstile check-out, and visitor identity verification.',
-    associatedViews: ['reception', 'walkin'],
-  },
-  {
-    id: 'VISITOR_DIRECTORY',
-    name: 'Visitor Master Directory',
-    category: 'OPERATIONS',
-    description: 'Search visitor profiles, view historic visits, access contact details, and export formatted PDF activity reports.',
-    associatedViews: ['visitors'],
-  },
-  {
-    id: 'INVITATIONS_PREREG',
-    name: 'Invitations & Pre-Registration',
-    category: 'OPERATIONS',
-    description: 'Send digital visitor passes, generate pre-registration links, and approve advance guest appointments.',
-    associatedViews: ['invitations', 'pre_register'],
-  },
-  {
-    id: 'SECURITY_APPROVALS',
-    name: 'Multi-Level Security Approvals',
-    category: 'SECURITY_GOVERNANCE',
-    description: 'Host pre-verification, Department lead authorization, and physical security gate pre-clearance.',
-    associatedViews: ['approvals'],
-  },
-  {
-    id: 'BADGE_PRINTING',
-    name: 'Thermal Badge Printing & Spooler',
-    category: 'OPERATIONS',
-    description: 'Send print jobs to Zebra / Brother printers, issue physical cards, and process reprint requests.',
-    associatedViews: ['badges'],
-  },
-  {
-    id: 'PASS_DESIGNER',
-    name: 'Visitor Pass & Badge Designer',
+    id: 'user_management',
+    name: 'User Login IDs & Access',
     category: 'ADMINISTRATION',
-    description: 'Design physical and digital pass templates, configure QR codes, dimensions, branding colors, and safety disclaimers.',
-    associatedViews: ['admin_hub'],
+    sectionTitle: 'ADMINISTRATION & TENANTS',
+    description: 'Provision staff user credentials, manage Login IDs, configure departmental scopes, and enforce multi-factor authentication (MFA).',
+    associatedViews: ['user_management', 'iam'],
+    subCapabilities: ['User Provisioning', 'Password Reset', 'MFA Management', 'Department Assignment'],
   },
   {
-    id: 'EMERGENCY_ROLLCALL',
-    name: 'Emergency Alarm & Evacuation Roll Call',
-    category: 'SAFETY_EMERGENCY',
-    description: 'Trigger facility emergency broadcasts, muster point roll call accountability, and export first-responder rosters.',
-    associatedViews: ['emergency'],
-  },
-  {
-    id: 'HARDWARE_DEVICES',
-    name: 'Hardware & Turnstile Controllers',
-    category: 'INFRASTRUCTURE',
-    description: 'Monitor IoT gate turnstiles, thermal printers, barcode scanners, and self-service kiosks.',
-    associatedViews: ['devices'],
-  },
-  {
-    id: 'EDGE_OFFLINE_SYNC',
-    name: 'Edge Offline Store-and-Forward',
-    category: 'INFRASTRUCTURE',
-    description: 'Manage local edge caching, offline check-in buffering, and cryptographic sync reconciliation.',
-    associatedViews: ['edge'],
-  },
-  {
-    id: 'ANALYTICS_REPORTS',
-    name: 'Facility Intelligence & Reports',
-    category: 'OPERATIONS',
-    description: 'Access visitor traffic heatmaps, dwell times, peak arrival charts, and compliance metrics.',
-    associatedViews: ['reports'],
-  },
-  {
-    id: 'AUDIT_TRAIL',
-    name: 'Forensic Audit Trail & Forensics',
-    category: 'SECURITY_GOVERNANCE',
-    description: 'Inspect tamper-evident chronological security logs, cryptographic hash chains, and export audit PDF reports.',
-    associatedViews: ['audit'],
-  },
-  {
-    id: 'USER_MANAGEMENT',
-    name: 'User Accounts & Login ID Provisioning',
+    id: 'roles_workflow',
+    name: 'Roles & Role Names (RBAC)',
     category: 'ADMINISTRATION',
-    description: 'Create user credentials, assign roles, enforce MFA, and manage departmental scopes.',
-    associatedViews: ['iam', 'user_management'],
+    sectionTitle: 'ADMINISTRATION & TENANTS',
+    description: 'Define custom security roles, customize role labels, configure functional access policies, and restrict specific user accounts.',
+    associatedViews: ['roles_workflow', 'iam'],
+    subCapabilities: ['Role Customizer', 'Label Renaming', 'Permission Matrix', 'User Overrides'],
   },
   {
-    id: 'TENANT_PROVISIONING',
-    name: 'Multi-Tenant Isolation & Provisioning',
+    id: 'whitelabel',
+    name: 'Logo, Fonts & Theme Colors',
     category: 'ADMINISTRATION',
-    description: 'Create and configure tenant shards, security retention policies, and corporate branding customization.',
-    associatedViews: ['tenants', 'tenant_provisioning', 'customization'],
+    sectionTitle: 'ADMINISTRATION & TENANTS',
+    description: 'Upload enterprise brand logos, set portal header titles, customize system typography, and select color palette themes.',
+    associatedViews: ['whitelabel', 'customization'],
+    subCapabilities: ['Custom Logo SVG/PNG', 'Typography Engine', 'Theme Palettes', 'Header Branding'],
   },
   {
-    id: 'GOOGLE_SHEETS_SYNC',
-    name: 'Google Sheets 2-Way Synchronization',
+    id: 'saas_license',
+    name: 'SaaS License Engine',
     category: 'ADMINISTRATION',
-    description: 'Automate live syncing of visitor activity logs directly to connected corporate Google Sheets spreadsheets.',
-    associatedViews: ['admin_hub'],
-  },
-  {
-    id: 'ROLE_PERMISSIONS',
-    name: 'Role-Based Workflow & Access Limiting',
-    category: 'ADMINISTRATION',
-    description: 'Grant and revoke operational functions from system roles and enforce custom access limitations on individual users.',
-    associatedViews: ['admin_hub'],
-  },
-  {
-    id: 'SAAS_LICENSING',
-    name: 'SaaS License Engine & Quota Control',
-    category: 'ADMINISTRATION',
-    description: 'Configure enterprise license tiers, seat limits, hardware allocations, cryptographic key generator, and activation tokens.',
+    sectionTitle: 'ADMINISTRATION & TENANTS',
+    description: 'Manage SaaS enterprise quotas, seat allocations, hardware device licenses, and verify cryptographic RSA license keys.',
     associatedViews: ['saas_license'],
+    subCapabilities: ['Tier Allocation', 'RSA Key Generator', 'Hardware Seats', 'Feature Entitlements'],
+  },
+  {
+    id: 'tenants',
+    name: 'Tenant Addition & Hierarchy',
+    category: 'ADMINISTRATION',
+    sectionTitle: 'ADMINISTRATION & TENANTS',
+    description: 'Provision multi-tenant shards, establish site hierarchies, configure gate checkpoints, and define facility departments.',
+    associatedViews: ['tenants'],
+    subCapabilities: ['Tenant Creation', 'Campus Sites', 'Gate Checkpoints', 'Department Hierarchies'],
+  },
+  {
+    id: 'customization',
+    name: 'System & Theme Customization',
+    category: 'ADMINISTRATION',
+    sectionTitle: 'ADMINISTRATION & TENANTS',
+    description: 'Configure corporate display themes, sound alerts, thermal label dimensions, and portal navigation preferences.',
+    associatedViews: ['customization'],
+    subCapabilities: ['Theme Customizer', 'Audio Alerts', 'Label Format Defaults', 'Portal Layouts'],
+  },
+
+  // ==========================================
+  // FUNCTION 2: OPERATIONS & WORKFLOW
+  // ==========================================
+  {
+    id: 'dashboard',
+    name: 'Operations Dashboard',
+    category: 'OPERATIONS',
+    sectionTitle: 'OPERATIONS & WORKFLOW',
+    description: 'Live overview of current facility visitor traffic, inside occupant counts, pending approval alerts, and quick actions.',
+    associatedViews: ['dashboard'],
+    subCapabilities: ['Real-time Occupancy', 'Quick Check-in', 'Alert Badges', 'Activity Timeline'],
+  },
+  {
+    id: 'reception',
+    name: 'Reception & Fast Check-In',
+    category: 'OPERATIONS',
+    sectionTitle: 'OPERATIONS & WORKFLOW',
+    description: 'Front desk fast check-in terminal, turnstile QR scanner integration, visitor identification, and badge check-out.',
+    associatedViews: ['reception', 'walkin'],
+    subCapabilities: ['Fast QR Scanner', 'Turnstile Gate Release', 'ID Verification', '1-Click Check-out'],
+  },
+  {
+    id: 'walkin',
+    name: 'Walk-In Registration',
+    category: 'OPERATIONS',
+    sectionTitle: 'OPERATIONS & WORKFLOW',
+    description: 'Register unscheduled visitors at the front desk, assign host employees, capture photo ID, and issue on-the-spot passes.',
+    associatedViews: ['walkin', 'reception'],
+    subCapabilities: ['Visitor Intake Form', 'Host Selection', 'Govt ID Capture', 'Instant Pass Issuance'],
+  },
+  {
+    id: 'visitors',
+    name: 'Visitor Directory',
+    category: 'OPERATIONS',
+    sectionTitle: 'OPERATIONS & WORKFLOW',
+    description: 'Comprehensive searchable master directory of all visitors, visit histories, NDA agreements, and VIP/watchlist flags.',
+    associatedViews: ['visitors'],
+    subCapabilities: ['Search Directory', 'Visit History Log', 'NDA Verification', 'Watchlist Screening'],
+  },
+  {
+    id: 'approvals',
+    name: 'Approval Queue',
+    category: 'OPERATIONS',
+    sectionTitle: 'OPERATIONS & WORKFLOW',
+    description: 'Host and security approval inbox for reviewing, authorizing, or rejecting pending visitor visit requests.',
+    associatedViews: ['approvals'],
+    subCapabilities: ['Pending Queue', 'Host Pre-Clearance', 'Security Vetting', 'Reason for Rejection'],
+  },
+  {
+    id: 'share_modal_action',
+    name: 'Share Pre-Reg Link',
+    category: 'OPERATIONS',
+    sectionTitle: 'OPERATIONS & WORKFLOW',
+    description: 'Dispatch digital invitation links and pre-registration URLs to guests via WhatsApp, SMS, or direct link copying.',
+    associatedViews: ['share_modal_action', 'pre_register'],
+    subCapabilities: ['Link Generator', 'WhatsApp Sharing', 'SMS Dispatch', 'Public Portal Link'],
+  },
+
+  // ==========================================
+  // FUNCTION 3: PASSES & FACILITY SAFETY
+  // ==========================================
+  {
+    id: 'invitations',
+    name: 'Invitations & QR Passes',
+    category: 'PASSES_SAFETY',
+    sectionTitle: 'PASSES & FACILITY SAFETY',
+    description: 'Issue advance visitor invitations, generate dynamic encrypted QR access codes, and schedule timed appointment windows.',
+    associatedViews: ['invitations', 'pre_register'],
+    subCapabilities: ['Advance Passes', 'Dynamic QR Expiry', 'Multi-day Clearances', 'Guest Email Notices'],
+  },
+  {
+    id: 'badges',
+    name: 'Badge Designer & Printing',
+    category: 'PASSES_SAFETY',
+    sectionTitle: 'PASSES & FACILITY SAFETY',
+    description: 'Visual thermal badge designer, spool print jobs directly to Zebra/Brother thermal printers, and reprint lost passes.',
+    associatedViews: ['badges', 'admin_hub'],
+    subCapabilities: ['Thermal ZPL Engine', 'Badge Customizer', 'Print Job Queue', 'Physical Card Layouts'],
+  },
+  {
+    id: 'emergency',
+    name: 'Emergency Evacuation',
+    category: 'PASSES_SAFETY',
+    sectionTitle: 'PASSES & FACILITY SAFETY',
+    description: 'Trigger facility-wide emergency alerts, access real-time muster point roll-call rosters, and export first-responder lists.',
+    associatedViews: ['emergency'],
+    subCapabilities: ['Alarm Broadcast', 'Muster Station Roster', 'Accountability Tally', 'Emergency Export'],
+  },
+
+  // ==========================================
+  // FUNCTION 4: INFRASTRUCTURE & OBSERVABILITY
+  // ==========================================
+  {
+    id: 'devices',
+    name: 'Device & Hardware Registry',
+    category: 'INFRASTRUCTURE',
+    sectionTitle: 'INFRASTRUCTURE & OBSERVABILITY',
+    description: 'Monitor connected IoT hardware devices including gate turnstiles, thermal printers, barcode scanners, and kiosks.',
+    associatedViews: ['devices'],
+    subCapabilities: ['Turnstile Status', 'Thermal Printers', 'Barcode Readers', 'Device Health Checks'],
+  },
+  {
+    id: 'edge',
+    name: 'Edge Sync & Offline Buffer',
+    category: 'INFRASTRUCTURE',
+    sectionTitle: 'INFRASTRUCTURE & OBSERVABILITY',
+    description: 'Manage offline edge resilience, local storage buffering, and cryptographic store-and-forward sync reconciliation.',
+    associatedViews: ['edge'],
+    subCapabilities: ['Offline Cache Monitor', 'Queue Buffer', 'Cryptographic Sync', 'Conflict Resolution'],
+  },
+  {
+    id: 'reports',
+    name: 'Operational Reports',
+    category: 'INFRASTRUCTURE',
+    sectionTitle: 'INFRASTRUCTURE & OBSERVABILITY',
+    description: 'Generate visitor analytics, peak arrival heatmaps, average dwell time metrics, and compliance audit reports.',
+    associatedViews: ['reports'],
+    subCapabilities: ['Traffic Heatmaps', 'Dwell Time Analytics', 'Export CSV/PDF', 'Audit Compliance'],
+  },
+  {
+    id: 'audit',
+    name: 'Immutable Audit Trail',
+    category: 'INFRASTRUCTURE',
+    sectionTitle: 'INFRASTRUCTURE & OBSERVABILITY',
+    description: 'Tamper-evident forensic audit log capturing every login, badge print, gate swipe, and administrative change with SHA-256 signatures.',
+    associatedViews: ['audit'],
+    subCapabilities: ['Cryptographic Hash Chain', 'Forensic Filtering', 'Tamper Verification', 'PDF Audit Export'],
+  },
+
+  // ==========================================
+  // FUNCTION 5: ENTERPRISE ARCHITECTURE & SPECS
+  // ==========================================
+  {
+    id: 'arch_guide',
+    name: 'Step-by-Step Specs Guide',
+    category: 'ARCHITECTURE_SPECS',
+    sectionTitle: 'ENTERPRISE ARCHITECTURE & SPECS',
+    description: 'Comprehensive enterprise implementation specifications, deployment checklists, and architecture guidelines.',
+    associatedViews: ['arch_guide'],
+    subCapabilities: ['Implementation Guide', 'Security Blueprints', 'Deployment Checklist', 'Standards Reference'],
+  },
+  {
+    id: 'blueprint',
+    name: 'Architecture, ADRs & DDL',
+    category: 'ARCHITECTURE_SPECS',
+    sectionTitle: 'ENTERPRISE ARCHITECTURE & SPECS',
+    description: 'Architectural Decision Records (ADRs), complete PostgreSQL DDL database schemas, and microservices topologies.',
+    associatedViews: ['blueprint'],
+    subCapabilities: ['Postgres DDL Schema', 'Architectural ADRs', 'System Topologies', 'Data Models'],
+  },
+  {
+    id: 'api_explorer',
+    name: 'OpenAPI 3.1 Live Catalog',
+    category: 'ARCHITECTURE_SPECS',
+    sectionTitle: 'ENTERPRISE ARCHITECTURE & SPECS',
+    description: 'Interactive API sandbox and live catalog documenting all VMS REST endpoints, payloads, and mock request runners.',
+    associatedViews: ['api_explorer'],
+    subCapabilities: ['REST Endpoints', 'Interactive Sandbox', 'JSON Schemas', 'Mock Request Runner'],
+  },
+  {
+    id: 'uat_tests',
+    name: 'Automated 25 UAT Tests',
+    category: 'ARCHITECTURE_SPECS',
+    sectionTitle: 'ENTERPRISE ARCHITECTURE & SPECS',
+    description: 'Automated 25-step user acceptance test (UAT) harness validating end-to-end multi-tenant workflows and security rules.',
+    associatedViews: ['uat_tests'],
+    subCapabilities: ['Automated Test Runner', 'Pass/Fail Assertions', 'Execution Timings', 'Audit Evidence Logs'],
+  },
+  {
+    id: 'iam',
+    name: 'OIDC Identity & RBAC Matrix',
+    category: 'ARCHITECTURE_SPECS',
+    sectionTitle: 'ENTERPRISE ARCHITECTURE & SPECS',
+    description: 'Inspect OpenID Connect (OIDC) identity claims, JSON Web Key Set (JWKS) integration, and full RBAC permission matrices.',
+    associatedViews: ['iam'],
+    subCapabilities: ['OIDC Token Claims', 'JWKS Signature Specs', 'RBAC Matrix Viewer', 'Scope Validations'],
   },
 ];
 
@@ -576,6 +871,22 @@ class VMSStorageService {
         if (!parsed.userRestrictedFunctions) {
           parsed.userRestrictedFunctions = {};
         }
+        // Ensure role definitions contain sidebar functions
+        if (parsed.roleDefinitions) {
+          for (const [k, v] of Object.entries(parsed.roleDefinitions)) {
+            const defPerms = DEFAULT_ROLE_PERMISSIONS[k as UserRole] || [];
+            const existing = (v as RoleDefinition).permissions || [];
+            const merged = Array.from(new Set([...existing, ...defPerms]));
+            (v as RoleDefinition).permissions = merged;
+          }
+        }
+        // Ensure superadmin password is set to Admin#321
+        const superAdmin = parsed.users?.find(
+          (u: AppUser) => u.role === 'PLATFORM_SUPER_ADMIN' || u.id === 'usr-ananya' || u.loginId === 'ananya'
+        );
+        if (superAdmin) {
+          superAdmin.password = 'Admin#321';
+        }
         // Verify tenant ID is from the Indian dataset
         if (parsed.activeTenantId && parsed.activeTenantId.includes('tata')) {
           return parsed;
@@ -691,13 +1002,32 @@ class VMSStorageService {
     gateId?: string;
     userId?: string;
   }) {
+    if (updates.userId) {
+      this.state.activeUserId = updates.userId;
+      const targetUser = this.state.users.find((u) => u.id === updates.userId);
+      // Auto-bind active tenant context to the target non-superadmin user's assigned tenant
+      if (targetUser && targetUser.role !== 'PLATFORM_SUPER_ADMIN') {
+        this.state.activeTenantId = targetUser.tenantId;
+        const firstSite = this.state.sites.find((s) => s.tenantId === targetUser.tenantId);
+        if (firstSite) {
+          this.state.activeSiteId = firstSite.id;
+          const firstGate = this.state.gates.find((g) => g.siteId === firstSite.id);
+          if (firstGate) this.state.activeGateId = firstGate.id;
+        }
+      }
+    }
     if (updates.tenantId) {
-      this.state.activeTenantId = updates.tenantId;
-      const firstSite = this.state.sites.find((s) => s.tenantId === updates.tenantId);
-      if (firstSite) {
-        this.state.activeSiteId = firstSite.id;
-        const firstGate = this.state.gates.find((g) => g.siteId === firstSite.id);
-        if (firstGate) this.state.activeGateId = firstGate.id;
+      const activeUser = this.getActiveUser();
+      const isSuper = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+      // Non-superadmins (e.g. TENANT_ADMIN) can only operate within their own tenant
+      if (isSuper || updates.tenantId === activeUser?.tenantId) {
+        this.state.activeTenantId = updates.tenantId;
+        const firstSite = this.state.sites.find((s) => s.tenantId === updates.tenantId);
+        if (firstSite) {
+          this.state.activeSiteId = firstSite.id;
+          const firstGate = this.state.gates.find((g) => g.siteId === firstSite.id);
+          if (firstGate) this.state.activeGateId = firstGate.id;
+        }
       }
     }
     if (updates.siteId) {
@@ -708,10 +1038,12 @@ class VMSStorageService {
     if (updates.gateId) {
       this.state.activeGateId = updates.gateId;
     }
-    if (updates.userId) {
-      this.state.activeUserId = updates.userId;
-    }
     this.saveState();
+
+    if (typeof window !== 'undefined') {
+      applyPortalTheme(this.getWhitelabelBranding());
+    }
+    this.notify();
   }
 
   public getActiveUser(): AppUser {
@@ -722,6 +1054,12 @@ class VMSStorageService {
   }
 
   public getActiveTenant(): Tenant {
+    const activeUser = this.getActiveUser();
+    // In Tenant Admin or non-superadmin mode, always return the user's registered tenant
+    if (activeUser && activeUser.role !== 'PLATFORM_SUPER_ADMIN') {
+      const userTenant = this.state.tenants.find((t) => t.id === activeUser.tenantId);
+      if (userTenant) return userTenant;
+    }
     return (
       this.state.tenants.find((t) => t.id === this.state.activeTenantId) ||
       this.state.tenants[0]
@@ -745,7 +1083,7 @@ class VMSStorageService {
   public logAuditEvent(params: {
     eventType: string;
     action: string;
-    entityType: 'VISIT' | 'VISITOR' | 'BADGE' | 'TENANT' | 'SECURITY' | 'DEVICE' | 'EDGE' | 'CONFIGURATION';
+    entityType: AuditEvent['entityType'];
     entityId: string;
     previousState?: string;
     newState?: string;
@@ -1605,7 +1943,7 @@ class VMSStorageService {
     }
   }
 
-  public login(loginIdOrEmail: string, _password?: string): { success: boolean; user?: AppUser; error?: string } {
+  public login(loginIdOrEmail: string, password?: string): { success: boolean; user?: AppUser; error?: string } {
     const trimmed = (loginIdOrEmail || '').trim().toLowerCase();
     if (!trimmed) {
       return { success: false, error: 'Please enter your Login ID or email address.' };
@@ -1645,6 +1983,23 @@ class VMSStorageService {
       return {
         success: false,
         error: 'This account is currently deactivated. Please contact your system administrator.',
+      };
+    }
+
+    // Password verification:
+    // Platform Super Admin requires explicit password validation against Admin#321
+    if (user.role === 'PLATFORM_SUPER_ADMIN') {
+      const requiredPassword = user.password || 'Admin#321';
+      if (!password || password !== requiredPassword) {
+        return {
+          success: false,
+          error: 'Invalid password for Super Admin. Please enter the authorized password (Admin#321).',
+        };
+      }
+    } else if (password && user.password && user.password !== password) {
+      return {
+        success: false,
+        error: 'Invalid password. Please check your credentials.',
       };
     }
 
@@ -1963,6 +2318,192 @@ class VMSStorageService {
       details: `Tenant configuration updated for ${tenant.name} (${tenant.code}).`,
     });
 
+    this.saveState();
+    return true;
+  }
+
+  // ----------------------------------------------------
+  // PHYSICAL LOCATIONS (SITES) & ENTRY LOCATIONS (GATES)
+  // ----------------------------------------------------
+  public addSite(payload: {
+    tenantId: string;
+    name: string;
+    code?: string;
+    address?: string;
+    timezone?: string;
+    visitorPolicy?: string;
+    requiresHostApproval?: boolean;
+    requiresSecurityApproval?: boolean;
+  }): Site {
+    const cleanCode = (payload.code || payload.name.slice(0, 4)).toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    const newSite: Site = {
+      id: `site-${cleanCode.toLowerCase()}-${Date.now().toString(36)}`,
+      tenantId: payload.tenantId,
+      name: payload.name.trim(),
+      code: cleanCode || 'SITE',
+      timezone: payload.timezone || 'Asia/Kolkata',
+      address: payload.address?.trim() || 'Enterprise Campus Facility',
+      status: 'ACTIVE',
+      visitorPolicy: payload.visitorPolicy?.trim() || 'Government photo ID required for visitor entry.',
+      requiresHostApproval: payload.requiresHostApproval ?? true,
+      requiresSecurityApproval: payload.requiresSecurityApproval ?? false,
+    };
+
+    this.state.sites.push(newSite);
+    this.logAuditEvent({
+      eventType: 'SITE_PROVISIONED',
+      action: 'ADD_SITE',
+      entityType: 'FACILITY',
+      entityId: newSite.id,
+      details: `New physical facility location registered: ${newSite.name} (${newSite.code}) under tenant ${payload.tenantId} by ${this.getActiveUser().name}.`,
+    });
+    this.saveState();
+    return newSite;
+  }
+
+  public updateSite(siteId: string, updates: Partial<Site>): boolean {
+    const site = this.state.sites.find((s) => s.id === siteId);
+    if (!site) return false;
+    Object.assign(site, updates);
+    this.logAuditEvent({
+      eventType: 'SITE_UPDATED',
+      action: 'UPDATE_SITE',
+      entityType: 'FACILITY',
+      entityId: siteId,
+      details: `Physical location updated: ${site.name} (${site.code}).`,
+    });
+    this.saveState();
+    return true;
+  }
+
+  public deleteSite(siteId: string): boolean {
+    const index = this.state.sites.findIndex((s) => s.id === siteId);
+    if (index === -1) return false;
+    const site = this.state.sites[index];
+    this.state.sites.splice(index, 1);
+    // Also remove associated gates
+    this.state.gates = this.state.gates.filter((g) => g.siteId !== siteId);
+    this.logAuditEvent({
+      eventType: 'SITE_DELETED',
+      action: 'DELETE_SITE',
+      entityType: 'FACILITY',
+      entityId: siteId,
+      details: `Physical location deleted: ${site.name} (${site.code}).`,
+    });
+    this.saveState();
+    return true;
+  }
+
+  public addGate(payload: {
+    siteId: string;
+    name: string;
+    code?: string;
+    type?: 'ENTRY_ONLY' | 'EXIT_ONLY' | 'BIDIRECTIONAL';
+    operatingStatus?: 'OPEN' | 'RESTRICTED' | 'EMERGENCY_LOCKDOWN' | 'OFFLINE';
+    assignedPrinterId?: string;
+    assignedTerminalId?: string;
+  }): Gate {
+    const site = this.state.sites.find((s) => s.id === payload.siteId);
+    const siteCode = site ? site.code : 'GATE';
+    const gateCount = this.state.gates.filter((g) => g.siteId === payload.siteId).length + 1;
+    const cleanCode = (payload.code || `GT-${siteCode}-${String(gateCount).padStart(2, '0')}`).toUpperCase();
+
+    const newGate: Gate = {
+      id: `gate-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      siteId: payload.siteId,
+      name: payload.name.trim(),
+      code: cleanCode,
+      type: payload.type || 'BIDIRECTIONAL',
+      operatingStatus: payload.operatingStatus || 'OPEN',
+      assignedPrinterId: payload.assignedPrinterId || 'dev-printer-01',
+      assignedTerminalId: payload.assignedTerminalId || 'dev-term-01',
+    };
+
+    this.state.gates.push(newGate);
+    this.logAuditEvent({
+      eventType: 'GATE_CONFIGURED',
+      action: 'ADD_GATE',
+      entityType: 'GATE',
+      entityId: newGate.id,
+      details: `New entry location registered: "${newGate.name}" (${newGate.code}, Type: ${newGate.type}) at physical facility "${site?.name || payload.siteId}" by ${this.getActiveUser().name}.`,
+    });
+    this.saveState();
+    return newGate;
+  }
+
+  public addMultipleGates(
+    siteId: string,
+    gatesList: Array<{
+      name: string;
+      code?: string;
+      type?: 'ENTRY_ONLY' | 'EXIT_ONLY' | 'BIDIRECTIONAL';
+      operatingStatus?: 'OPEN' | 'RESTRICTED' | 'EMERGENCY_LOCKDOWN' | 'OFFLINE';
+    }>
+  ): Gate[] {
+    const site = this.state.sites.find((s) => s.id === siteId);
+    const siteCode = site ? site.code : 'GATE';
+    const currentCount = this.state.gates.filter((g) => g.siteId === siteId).length;
+
+    const createdGates: Gate[] = [];
+    gatesList.forEach((item, idx) => {
+      if (!item.name || !item.name.trim()) return;
+      const count = currentCount + idx + 1;
+      const cleanCode = (item.code || `GT-${siteCode}-${String(count).padStart(2, '0')}`).toUpperCase();
+
+      const newGate: Gate = {
+        id: `gate-${Date.now().toString(36)}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+        siteId: siteId,
+        name: item.name.trim(),
+        code: cleanCode,
+        type: item.type || 'BIDIRECTIONAL',
+        operatingStatus: item.operatingStatus || 'OPEN',
+        assignedPrinterId: 'dev-printer-01',
+        assignedTerminalId: 'dev-term-01',
+      };
+      this.state.gates.push(newGate);
+      createdGates.push(newGate);
+    });
+
+    if (createdGates.length > 0) {
+      this.logAuditEvent({
+        eventType: 'MULTIPLE_GATES_CONFIGURED',
+        action: 'BATCH_ADD_GATES',
+        entityType: 'GATE',
+        entityId: siteId,
+        details: `Batch added ${createdGates.length} entry locations at physical location "${site?.name || siteId}" by ${this.getActiveUser().name}.`,
+      });
+      this.saveState();
+    }
+    return createdGates;
+  }
+
+  public updateGate(gateId: string, updates: Partial<Gate>): boolean {
+    const gate = this.state.gates.find((g) => g.id === gateId);
+    if (!gate) return false;
+    Object.assign(gate, updates);
+    this.logAuditEvent({
+      eventType: 'GATE_UPDATED',
+      action: 'UPDATE_GATE',
+      entityType: 'GATE',
+      entityId: gateId,
+      details: `Entry location updated: ${gate.name} (${gate.code}).`,
+    });
+    this.saveState();
+    return true;
+  }
+
+  public deleteGate(gateId: string): boolean {
+    const index = this.state.gates.findIndex((g) => g.id === gateId);
+    if (index === -1) return false;
+    const gate = this.state.gates[index];
+    this.state.gates.splice(index, 1);
+    this.logAuditEvent({
+      eventType: 'GATE_DELETED',
+      action: 'DELETE_GATE',
+      entityType: 'GATE',
+      entityId: gateId,
+      details: `Entry location deleted: ${gate.name} (${gate.code}).`,
+    });
     this.saveState();
     return true;
   }
@@ -2435,81 +2976,163 @@ class VMSStorageService {
   }
 
   // ----------------------------------------------------
-  // CLIENT WHITELABELING & COMPANY LOGO CUSTOMIZATION
+  // CLIENT WHITELABELING & COMPANY LOGO CUSTOMIZATION (PER-TENANT ENGINE)
   // ----------------------------------------------------
-  public getWhitelabelBranding(): WhitelabelBranding {
+  public getDefaultTenantWhitelabelBranding(tenant: Tenant): WhitelabelBranding {
+    return {
+      enabled: true,
+      logoUrl: undefined,
+      logoFileName: undefined,
+      logoHeightPx: 36,
+      companyName: tenant.name,
+      portalTitle: `${tenant.name} Visitor Portal`,
+      tagline: 'Zero-Trust Enterprise Campus Security & Check-In',
+      primaryColor: tenant.branding?.primaryColor || '#123B5D',
+      secondaryColor: '#0F766E',
+      headerBackground: 'DARK_NAVY',
+      hidePoweredBy: false,
+      fontFamily: 'Plus Jakarta Sans',
+      fontStyle: 'normal',
+      fontWeight: '600',
+      letterSpacing: 'normal',
+      textTransform: 'none',
+      fontSizeBase: '14px',
+      fontColor: '#172B3A',
+      headingColor: '#0F172A',
+      mutedFontColor: '#526575',
+      backgroundColor: '#FAF7EE',
+      surfaceColor: '#FFFFF0',
+      foreColor: tenant.branding?.primaryColor || '#123B5D',
+      foreColorText: '#FFFFFF',
+      secondaryForeColor: '#0F766E',
+    };
+  }
+
+  public getTenantWhitelabelBranding(tenantId: string): WhitelabelBranding {
+    const tenant = this.state.tenants.find((t) => t.id === tenantId);
+    if (!tenant) return this.getWhitelabelBranding();
+    if (!tenant.whitelabelBranding) {
+      tenant.whitelabelBranding = this.getDefaultTenantWhitelabelBranding(tenant);
+    }
+    return { ...tenant.whitelabelBranding };
+  }
+
+  public getWhitelabelBranding(tenantId?: string): WhitelabelBranding {
+    const currentTenant = this.getActiveTenant();
+    const isSuperAdmin = this.getActiveUser()?.role === 'PLATFORM_SUPER_ADMIN';
+    const targetTenantId = tenantId || (isSuperAdmin ? this.state.activeTenantId : currentTenant.id);
+    const tenant = this.state.tenants.find((t) => t.id === targetTenantId) || currentTenant;
+    if (tenant) {
+      if (!tenant.whitelabelBranding) {
+        tenant.whitelabelBranding = this.getDefaultTenantWhitelabelBranding(tenant);
+      }
+      return { ...tenant.whitelabelBranding };
+    }
     if (!this.state.whitelabelBranding) {
       this.state.whitelabelBranding = { ...DEFAULT_WHITELABEL_BRANDING };
     }
     return { ...this.state.whitelabelBranding };
   }
 
-  public updateWhitelabelBranding(
+  public updateTenantWhitelabelBranding(
+    tenantId: string,
     updates: Partial<WhitelabelBranding>
   ): { success: boolean; branding: WhitelabelBranding } {
-    if (!this.state.whitelabelBranding) {
-      this.state.whitelabelBranding = { ...DEFAULT_WHITELABEL_BRANDING };
+    const tenant = this.state.tenants.find((t) => t.id === tenantId);
+    if (!tenant) return { success: false, branding: this.getWhitelabelBranding() };
+
+    if (!tenant.whitelabelBranding) {
+      tenant.whitelabelBranding = this.getDefaultTenantWhitelabelBranding(tenant);
     }
 
-    this.state.whitelabelBranding = {
-      ...this.state.whitelabelBranding,
+    tenant.whitelabelBranding = {
+      ...tenant.whitelabelBranding,
       ...updates,
       updatedAt: new Date().toISOString(),
     };
 
-    // Synchronize active tenant branding
-    const activeTenant = this.getActiveTenant();
-    if (activeTenant) {
-      if (updates.companyName) {
-        activeTenant.branding.logoText = updates.companyName;
-      }
-      if (updates.primaryColor) {
-        activeTenant.branding.primaryColor = updates.primaryColor;
+    if (updates.primaryColor) {
+      tenant.branding.primaryColor = updates.primaryColor;
+    }
+    if (updates.companyName) {
+      tenant.branding.logoText = updates.companyName;
+    }
+
+    // If currently active tenant, apply live theme
+    if (tenantId === this.state.activeTenantId) {
+      this.state.whitelabelBranding = { ...tenant.whitelabelBranding };
+      if (typeof window !== 'undefined') {
+        applyPortalTheme(tenant.whitelabelBranding);
       }
     }
 
     this.saveState();
-
-    if (typeof window !== 'undefined') {
-      applyPortalTheme(this.state.whitelabelBranding);
-    }
     this.notify();
 
     this.logAuditEvent({
-      eventType: 'WHITELABEL_BRANDING_UPDATED',
-      action: 'UPDATE_PORTAL_LOGO_BRANDING',
-      entityType: 'CONFIGURATION',
-      entityId: 'WHITELABEL_PORTAL',
-      details: `Updated client portal white-labeling: Logo ${
-        this.state.whitelabelBranding.logoUrl ? 'Uploaded/Configured' : 'Default'
-      }, Company Name "${this.state.whitelabelBranding.companyName}", Font "${
-        this.state.whitelabelBranding.fontFamily || 'Default'
-      }", ForeColor "${this.state.whitelabelBranding.foreColor || 'Default'}", Mode: ${
-        this.state.whitelabelBranding.enabled ? 'ACTIVE' : 'DISABLED'
-      }.`,
+      eventType: 'TENANT_WHITELABEL_UPDATED',
+      action: 'UPDATE_TENANT_WHITELABEL',
+      entityType: 'TENANT',
+      entityId: tenant.id,
+      details: `Updated white-labeling for enterprise tenant "${tenant.name}" (${tenant.code}): Company "${tenant.whitelabelBranding.companyName}", Font "${tenant.whitelabelBranding.fontFamily || 'Default'}", Color "${tenant.whitelabelBranding.primaryColor}", Enabled: ${tenant.whitelabelBranding.enabled}.`,
     });
 
-    return { success: true, branding: { ...this.state.whitelabelBranding } };
+    return { success: true, branding: { ...tenant.whitelabelBranding } };
+  }
+
+  public updateWhitelabelBranding(
+    updates: Partial<WhitelabelBranding>
+  ): { success: boolean; branding: WhitelabelBranding } {
+    return this.updateTenantWhitelabelBranding(this.state.activeTenantId, updates);
+  }
+
+  public resetTenantWhitelabelBranding(tenantId: string): { success: boolean; branding: WhitelabelBranding } {
+    const tenant = this.state.tenants.find((t) => t.id === tenantId);
+    if (!tenant) return { success: false, branding: this.getWhitelabelBranding() };
+
+    tenant.whitelabelBranding = this.getDefaultTenantWhitelabelBranding(tenant);
+
+    if (tenantId === this.state.activeTenantId) {
+      this.state.whitelabelBranding = { ...tenant.whitelabelBranding };
+      if (typeof window !== 'undefined') {
+        applyPortalTheme(tenant.whitelabelBranding);
+      }
+    }
+
+    this.saveState();
+    this.notify();
+
+    this.logAuditEvent({
+      eventType: 'TENANT_WHITELABEL_RESET',
+      action: 'RESET_TENANT_WHITELABEL',
+      entityType: 'TENANT',
+      entityId: tenant.id,
+      details: `Reset white-label branding for tenant "${tenant.name}" (${tenant.code}) to clean corporate defaults.`,
+    });
+
+    return { success: true, branding: { ...tenant.whitelabelBranding } };
   }
 
   public resetWhitelabelBranding(): { success: boolean; branding: WhitelabelBranding } {
-    this.state.whitelabelBranding = { ...DEFAULT_WHITELABEL_BRANDING };
-    this.saveState();
+    return this.resetTenantWhitelabelBranding(this.state.activeTenantId);
+  }
 
-    if (typeof window !== 'undefined') {
-      applyPortalTheme(this.state.whitelabelBranding);
+  public copyTenantWhitelabelBranding(
+    sourceTenantId: string,
+    targetTenantId: string
+  ): { success: boolean; branding: WhitelabelBranding } {
+    const sourceTenant = this.state.tenants.find((t) => t.id === sourceTenantId);
+    const targetTenant = this.state.tenants.find((t) => t.id === targetTenantId);
+    if (!sourceTenant || !targetTenant) {
+      return { success: false, branding: this.getWhitelabelBranding() };
     }
-    this.notify();
 
-    this.logAuditEvent({
-      eventType: 'WHITELABEL_BRANDING_RESET',
-      action: 'RESET_FACTORY_BRANDING',
-      entityType: 'CONFIGURATION',
-      entityId: 'WHITELABEL_PORTAL',
-      details: 'Reset portal white-labeling, typography, and theme palette to factory default JS AlphaSoft branding.',
+    const sourceBranding = this.getTenantWhitelabelBranding(sourceTenantId);
+    return this.updateTenantWhitelabelBranding(targetTenantId, {
+      ...sourceBranding,
+      companyName: targetTenant.name,
+      portalTitle: `${targetTenant.name} Visitor Portal`,
     });
-
-    return { success: true, branding: { ...this.state.whitelabelBranding } };
   }
 
   // ----------------------------------------------------
@@ -2551,16 +3174,23 @@ class VMSStorageService {
     return roleFns.filter((fn) => !restrictedFns.includes(fn));
   }
 
-  public hasFunctionAccess(userId: string, functionId: VMSFunctionId): boolean {
+  public hasFunctionAccess(userId: string, functionId: VMSFunctionId | string): boolean {
     const user = this.state.users.find((u) => u.id === userId);
     if (!user) return false;
     if (user.status === 'INACTIVE') return false;
 
     const restrictedFns = this.getUserRestrictedFunctions(userId);
-    if (restrictedFns.includes(functionId)) return false;
+    if (restrictedFns.includes(functionId as VMSFunctionId)) return false;
+
+    if (user.role === 'PLATFORM_SUPER_ADMIN') return true;
 
     const roleFns = this.getRolePermissions(user.role);
-    return roleFns.includes(functionId);
+    if (roleFns.includes(functionId as VMSFunctionId)) return true;
+
+    const alias = FUNCTION_ID_ALIASES[functionId];
+    if (alias && roleFns.includes(alias)) return true;
+
+    return false;
   }
 
   public updateUserRole(userId: string, newRole: UserRole): { success: boolean; user?: AppUser } {

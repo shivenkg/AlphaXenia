@@ -43,6 +43,8 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
   const inputRef = useRef<HTMLInputElement>(null);
 
   const state = storageService.getState();
+  const activeUser = storageService.getActiveUser();
+  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
   const users = state.users || [];
   const tenants = state.tenants || [];
   const auditLogs = state.auditEvents || [];
@@ -64,6 +66,9 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
 
     const q = searchQuery.toLowerCase().trim();
     return users.filter((u) => {
+      // Tenant isolation: non-superadmins only see their own tenant's users
+      if (!isSuperAdmin && u.tenantId !== state.activeTenantId) return false;
+
       // Role filter
       if (selectedRole !== 'ALL' && u.role !== selectedRole) return false;
       // Status filter
@@ -84,10 +89,12 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
 
       return matchName || matchLogin || matchEmail || matchDept || matchRole;
     });
-  }, [users, searchQuery, selectedScope, selectedRole, selectedStatus]);
+  }, [users, searchQuery, selectedScope, selectedRole, selectedStatus, isSuperAdmin, state.activeTenantId]);
 
   // Filter matching Tenants
   const filteredTenants = useMemo(() => {
+    // If not super admin, other tenants should not be visible at all
+    if (!isSuperAdmin) return [];
     if (selectedScope === 'USERS' || selectedScope === 'AUDIT_LOGS') return [];
     if (selectedRole !== 'ALL') return []; // Role filter applies to users/audit actors
 
@@ -109,7 +116,7 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
 
       return matchName || matchCode || matchTier || matchHealth;
     });
-  }, [tenants, searchQuery, selectedScope, selectedRole, selectedStatus]);
+  }, [tenants, searchQuery, selectedScope, selectedRole, selectedStatus, isSuperAdmin]);
 
   // Filter matching System Audit Logs
   const filteredAuditLogs = useMemo(() => {
@@ -117,6 +124,9 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
 
     const q = searchQuery.toLowerCase().trim();
     return auditLogs.filter((log) => {
+      // Tenant isolation: non-superadmins only see their own tenant's audit logs
+      if (!isSuperAdmin && log.tenantId !== state.activeTenantId) return false;
+
       // Role filter
       if (selectedRole !== 'ALL' && log.actorRole !== selectedRole) return false;
       // Status filter
@@ -216,7 +226,11 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
           <div className="flex items-center flex-wrap gap-2 shrink-0">
             {/* Scope Filter */}
             <div className="flex items-center bg-[#F1F5F9] p-0.5 rounded-xl border border-slate-200 text-[11px] font-bold">
-              {(['ALL', 'USERS', 'TENANTS', 'AUDIT_LOGS'] as EntityScope[]).map((scope) => (
+              {(
+                isSuperAdmin
+                  ? (['ALL', 'USERS', 'TENANTS', 'AUDIT_LOGS'] as EntityScope[])
+                  : (['ALL', 'USERS', 'AUDIT_LOGS'] as EntityScope[])
+              ).map((scope) => (
                 <button
                   key={scope}
                   onClick={() => {

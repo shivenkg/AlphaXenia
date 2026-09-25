@@ -266,10 +266,13 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
   const [functionCategoryFilter, setFunctionCategoryFilter] = useState<string>('ALL');
   const [functionSearchQuery, setFunctionSearchQuery] = useState<string>('');
 
-  const functionCategories: string[] = [
-    'ALL',
-    ...Array.from(new Set(functionDefs.map((f: VMSFunctionDefinition) => f.category))),
-  ];
+  const SIDEBAR_FUNCTION_SECTIONS: Record<string, { label: string; number: number; color: string }> = {
+    ADMINISTRATION: { label: 'ADMINISTRATION & TENANTS', number: 1, color: 'text-purple-700 bg-purple-50 border-purple-200' },
+    OPERATIONS: { label: 'OPERATIONS & WORKFLOW', number: 2, color: 'text-teal-700 bg-teal-50 border-teal-200' },
+    PASSES_SAFETY: { label: 'PASSES & FACILITY SAFETY', number: 3, color: 'text-blue-700 bg-blue-50 border-blue-200' },
+    INFRASTRUCTURE: { label: 'INFRASTRUCTURE & OBSERVABILITY', number: 4, color: 'text-cyan-700 bg-cyan-50 border-cyan-200' },
+    ARCHITECTURE_SPECS: { label: 'ENTERPRISE ARCHITECTURE & SPECS', number: 5, color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
+  };
 
   const filteredFunctions: VMSFunctionDefinition[] = functionDefs.filter(
     (f: VMSFunctionDefinition) => {
@@ -279,7 +282,8 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
         !functionSearchQuery ||
         f.name.toLowerCase().includes(q) ||
         f.id.toLowerCase().includes(q) ||
-        f.description.toLowerCase().includes(q);
+        f.description.toLowerCase().includes(q) ||
+        f.subCapabilities?.some((s) => s.toLowerCase().includes(q));
       return matchesCat && matchesQuery;
     }
   );
@@ -973,22 +977,36 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
 
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 max-w-full">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0">
-                    Category:
+                    Function:
                   </span>
-                  {functionCategories.map((c: string) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setFunctionCategoryFilter(c)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                        functionCategoryFilter === c
-                          ? 'bg-indigo-700 text-white shadow-2xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setFunctionCategoryFilter('ALL')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                      functionCategoryFilter === 'ALL'
+                        ? 'bg-indigo-700 text-white shadow-2xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    All Functions ({functionDefs.length})
+                  </button>
+                  {Object.entries(SIDEBAR_FUNCTION_SECTIONS).map(([key, meta]) => {
+                    const count = functionDefs.filter((f) => f.category === key).length;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setFunctionCategoryFilter(key)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+                          functionCategoryFilter === key
+                            ? 'bg-indigo-700 text-white shadow-2xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {meta.number}. {meta.label} ({count})
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -997,8 +1015,8 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700">
-                    <th className="p-3 font-bold">VMS Function / Resource</th>
-                    <th className="p-3 font-bold">Category</th>
+                    <th className="p-3 font-bold">Sidebar Function & Sub-function</th>
+                    <th className="p-3 font-bold">Function Section</th>
                     <th className="p-3 font-bold text-center">Super Admin</th>
                     <th className="p-3 font-bold text-center">Tenant Admin</th>
                     <th className="p-3 font-bold text-center">Reception</th>
@@ -1013,16 +1031,42 @@ export const ArchitectureDocsView: React.FC<ArchitectureDocsViewProps> = ({
                       const perms = storageService.getRolePermissions(r);
                       return perms.includes(fn.id);
                     };
+                    const sectionMeta = SIDEBAR_FUNCTION_SECTIONS[fn.category] || {
+                      label: fn.category,
+                      number: 1,
+                      color: 'bg-slate-100 text-slate-700 border-slate-200',
+                    };
 
                     return (
                       <tr key={fn.id} className="hover:bg-slate-50/70 transition">
                         <td className="p-3 font-medium text-slate-900">
-                          <div className="font-bold">{fn.name}</div>
-                          <div className="text-[10px] text-slate-400">{fn.description}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900">{fn.name}</span>
+                            <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                              [{fn.id}]
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-medium border border-indigo-100">
+                              Sidebar Item
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">{fn.description}</div>
+                          {fn.subCapabilities && fn.subCapabilities.length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap mt-1">
+                              <span className="text-[9px] font-semibold text-slate-400">Sub-features:</span>
+                              {fn.subCapabilities.map((cap) => (
+                                <span
+                                  key={cap}
+                                  className="text-[9px] bg-slate-50 border border-slate-200 text-slate-600 px-1 rounded"
+                                >
+                                  {cap}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </td>
-                        <td className="p-3">
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600">
-                            {fn.category}
+                        <td className="p-3 whitespace-nowrap">
+                          <span className={`text-[10px] font-mono font-bold px-2 py-1 rounded-md border ${sectionMeta.color}`}>
+                            F{sectionMeta.number}: {sectionMeta.label}
                           </span>
                         </td>
                         <td className="p-3 text-center">

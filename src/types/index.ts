@@ -120,6 +120,7 @@ export interface Tenant {
     primaryColor: string;
     logoText: string;
   };
+  whitelabelBranding?: WhitelabelBranding;
   createdAt: string;
 }
 
@@ -303,6 +304,36 @@ export interface UserPreferences {
 }
 
 export type VMSFunctionId =
+  // Function 1: ADMINISTRATION & TENANTS
+  | 'user_management'
+  | 'roles_workflow'
+  | 'whitelabel'
+  | 'saas_license'
+  | 'tenants'
+  | 'customization'
+  // Function 2: OPERATIONS & WORKFLOW
+  | 'dashboard'
+  | 'reception'
+  | 'walkin'
+  | 'visitors'
+  | 'approvals'
+  | 'share_modal_action'
+  // Function 3: PASSES & FACILITY SAFETY
+  | 'invitations'
+  | 'badges'
+  | 'emergency'
+  // Function 4: INFRASTRUCTURE & OBSERVABILITY
+  | 'devices'
+  | 'edge'
+  | 'reports'
+  | 'audit'
+  // Function 5: ENTERPRISE ARCHITECTURE & SPECS
+  | 'arch_guide'
+  | 'blueprint'
+  | 'api_explorer'
+  | 'uat_tests'
+  | 'iam'
+  // Legacy module aliases for backward compatibility
   | 'RECEPTION_DESK'
   | 'VISITOR_DIRECTORY'
   | 'INVITATIONS_PREREG'
@@ -366,9 +397,11 @@ export interface SaaSLicenseRecord {
 export interface VMSFunctionDefinition {
   id: VMSFunctionId;
   name: string;
-  category: 'OPERATIONS' | 'SECURITY_GOVERNANCE' | 'SAFETY_EMERGENCY' | 'INFRASTRUCTURE' | 'ADMINISTRATION';
+  category: 'ADMINISTRATION' | 'OPERATIONS' | 'PASSES_SAFETY' | 'INFRASTRUCTURE' | 'ARCHITECTURE_SPECS' | 'SECURITY_GOVERNANCE' | 'SAFETY_EMERGENCY' | string;
+  sectionTitle?: string;
   description: string;
-  associatedViews: NavViewId[];
+  associatedViews: (NavViewId | 'share_modal_action')[];
+  subCapabilities?: string[];
 }
 
 export interface BadgeTemplate {
@@ -450,7 +483,7 @@ export interface AuditEvent {
   actorRole: UserRole;
   eventType: string;
   action: string;
-  entityType: 'VISIT' | 'VISITOR' | 'BADGE' | 'TENANT' | 'SECURITY' | 'DEVICE' | 'EDGE' | 'CONFIGURATION';
+  entityType: 'VISIT' | 'VISITOR' | 'BADGE' | 'TENANT' | 'SECURITY' | 'DEVICE' | 'EDGE' | 'CONFIGURATION' | 'FACILITY' | 'GATE';
   entityId: string;
   previousState?: string;
   newState?: string;

@@ -27,7 +27,26 @@ import {
   Trash2,
   UserCheck,
   Sparkles,
-  Tag
+  Tag,
+  Building,
+  Palette,
+  KeyRound,
+  LayoutDashboard,
+  ScanLine,
+  UserPlus,
+  CheckSquare,
+  Share2,
+  QrCode,
+  Printer,
+  AlertOctagon,
+  HardDrive,
+  Wifi,
+  BarChart3,
+  FileText,
+  Compass,
+  BookOpen,
+  FileCode2,
+  TestTube2
 } from 'lucide-react';
 import {
   storageService,
@@ -40,6 +59,50 @@ import { UserRole, VMSFunctionId, AppUser, RoleDefinition } from '../../types';
 interface RoleWorkflowManagementTabProps {
   onSuccessToast?: (msg: string) => void;
 }
+
+const SUBFUNCTION_ICONS: Record<string, any> = {
+  user_management: Users,
+  roles_workflow: ShieldCheck,
+  whitelabel: Palette,
+  saas_license: KeyRound,
+  tenants: Building,
+  customization: Sliders,
+  dashboard: LayoutDashboard,
+  reception: ScanLine,
+  walkin: UserPlus,
+  visitors: Users,
+  approvals: CheckSquare,
+  share_modal_action: Share2,
+  invitations: QrCode,
+  badges: Printer,
+  emergency: AlertOctagon,
+  devices: HardDrive,
+  edge: Wifi,
+  reports: BarChart3,
+  audit: FileText,
+  arch_guide: Compass,
+  blueprint: BookOpen,
+  api_explorer: FileCode2,
+  uat_tests: TestTube2,
+  iam: KeyRound,
+  // Backward compatibility
+  RECEPTION_DESK: ScanLine,
+  VISITOR_DIRECTORY: Users,
+  INVITATIONS_PREREG: QrCode,
+  SECURITY_APPROVALS: CheckSquare,
+  BADGE_PRINTING: Printer,
+  PASS_DESIGNER: Sliders,
+  EMERGENCY_ROLLCALL: AlertOctagon,
+  HARDWARE_DEVICES: HardDrive,
+  EDGE_OFFLINE_SYNC: Wifi,
+  ANALYTICS_REPORTS: BarChart3,
+  AUDIT_TRAIL: FileText,
+  USER_MANAGEMENT: Users,
+  TENANT_PROVISIONING: Building,
+  GOOGLE_SHEETS_SYNC: Layers,
+  ROLE_PERMISSIONS: ShieldCheck,
+  SAAS_LICENSING: KeyRound,
+};
 
 const BADGE_COLOR_PRESETS = [
   { label: 'Purple (Admin)', value: 'bg-purple-100 text-purple-900 border-purple-300' },
@@ -69,12 +132,45 @@ const SECURITY_TIERS = [
   'Tier 5 (Standard Staff)',
 ];
 
-const CATEGORY_NAMES: Record<string, { label: string; icon: any; color: string }> = {
-  OPERATIONS: { label: 'Operations & Desk Execution', icon: Layers, color: 'text-teal-700 bg-teal-50 border-teal-200' },
-  SECURITY_GOVERNANCE: { label: 'Security, Approvals & Governance', icon: Shield, color: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
-  SAFETY_EMERGENCY: { label: 'Life Safety & Emergency Response', icon: AlertTriangle, color: 'text-amber-700 bg-amber-50 border-amber-200' },
-  INFRASTRUCTURE: { label: 'Hardware & Edge Infrastructure', icon: Settings2, color: 'text-cyan-700 bg-cyan-50 border-cyan-200' },
-  ADMINISTRATION: { label: 'System Administration & Integration', icon: Key, color: 'text-purple-700 bg-purple-50 border-purple-200' },
+const CATEGORY_NAMES: Record<
+  string,
+  { label: string; functionNumber: number; icon: any; color: string; description: string }
+> = {
+  ADMINISTRATION: {
+    label: 'ADMINISTRATION & TENANTS',
+    functionNumber: 1,
+    icon: Building,
+    color: 'text-purple-700 bg-purple-50 border-purple-200',
+    description: 'System administration, user credentials, custom branding, and SaaS licensing functions.',
+  },
+  OPERATIONS: {
+    label: 'OPERATIONS & WORKFLOW',
+    functionNumber: 2,
+    icon: ScanLine,
+    color: 'text-teal-700 bg-teal-50 border-teal-200',
+    description: 'Front desk terminals, fast walk-in registration, visitor directories, and security approval queue functions.',
+  },
+  PASSES_SAFETY: {
+    label: 'PASSES & FACILITY SAFETY',
+    functionNumber: 3,
+    icon: QrCode,
+    color: 'text-blue-700 bg-blue-50 border-blue-200',
+    description: 'Digital QR passes, thermal badge printing spoolers, and emergency evacuation roll call functions.',
+  },
+  INFRASTRUCTURE: {
+    label: 'INFRASTRUCTURE & OBSERVABILITY',
+    functionNumber: 4,
+    icon: HardDrive,
+    color: 'text-cyan-700 bg-cyan-50 border-cyan-200',
+    description: 'IoT hardware controllers, offline edge store-and-forward caching, analytics reports, and forensic audit trail functions.',
+  },
+  ARCHITECTURE_SPECS: {
+    label: 'ENTERPRISE ARCHITECTURE & SPECS',
+    functionNumber: 5,
+    icon: Compass,
+    color: 'text-indigo-700 bg-indigo-50 border-indigo-200',
+    description: 'Implementation specs, PostgreSQL DDL blueprints, OpenAPI 3.1 catalog, automated UAT test harness, and IAM matrices.',
+  },
 };
 
 export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps> = ({ onSuccessToast }) => {
@@ -95,6 +191,7 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
   );
   const [isSavingRole, setIsSavingRole] = useState(false);
   const [roleSearchTerm, setRoleSearchTerm] = useState('');
+  const [functionSearchTerm, setFunctionSearchTerm] = useState('');
 
   // Add Custom Role Modal State
   const [isAddRoleModalOpen, setIsAddRoleModalOpen] = useState(false);
@@ -365,22 +462,34 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
     });
   }, [users, userSearchTerm]);
 
-  // Group functions by category
+  // Group functions by category corresponding directly to Sidebar menu sections
   const categorizedFunctions = useMemo(() => {
     const groups: Record<string, typeof VMS_FUNCTION_DEFINITIONS> = {
-      OPERATIONS: [],
-      SECURITY_GOVERNANCE: [],
-      SAFETY_EMERGENCY: [],
-      INFRASTRUCTURE: [],
       ADMINISTRATION: [],
+      OPERATIONS: [],
+      PASSES_SAFETY: [],
+      INFRASTRUCTURE: [],
+      ARCHITECTURE_SPECS: [],
     };
     VMS_FUNCTION_DEFINITIONS.forEach((fn) => {
-      if (groups[fn.category]) {
-        groups[fn.category].push(fn);
+      const q = functionSearchTerm.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        fn.name.toLowerCase().includes(q) ||
+        fn.id.toLowerCase().includes(q) ||
+        fn.description.toLowerCase().includes(q) ||
+        fn.subCapabilities?.some((s) => s.toLowerCase().includes(q));
+
+      if (matchesSearch) {
+        if (groups[fn.category]) {
+          groups[fn.category].push(fn);
+        } else {
+          groups[fn.category] = [fn];
+        }
       }
     });
     return groups;
-  }, []);
+  }, [functionSearchTerm]);
 
   return (
     <div className="space-y-6">
@@ -545,7 +654,7 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
                   </span>
                   <span className="text-xs text-slate-400">•</span>
                   <span className="text-xs font-semibold text-slate-600">
-                    {activeFunctions.length} / {VMS_FUNCTION_DEFINITIONS.length} Modules Active
+                    {activeFunctions.length} / {VMS_FUNCTION_DEFINITIONS.length} Sub-functions Active
                   </span>
                   <span className="text-xs text-slate-400">•</span>
                   <span className="text-xs font-mono text-slate-500 font-bold">
@@ -649,17 +758,34 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
               </div>
             </div>
 
-            {/* Categorized Function Blocks (Roles Based Access Checklist) */}
+            {/* Categorized Function Blocks (Roles Based Access Checklist matching Sidebar) */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between px-1 text-xs">
-                <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                  Roles Based Access: Functional Capabilities Matrix
-                </span>
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1 text-xs">
+                <div>
+                  <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Sidebar Menu Functions & Sub-functions Matrix ({VMS_FUNCTION_DEFINITIONS.length} Sub-functions)</span>
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Every function and sub-function below mirrors the sidebar navigation items. Toggle to grant or deny access for this role.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="relative w-48 sm:w-56">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
+                    <input
+                      type="text"
+                      value={functionSearchTerm}
+                      onChange={(e) => setFunctionSearchTerm(e.target.value)}
+                      placeholder="Filter sub-functions..."
+                      className="w-full pl-8 pr-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-teal-600"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={() => setActiveFunctions(VMS_FUNCTION_DEFINITIONS.map((f) => f.id))}
-                    className="text-teal-700 hover:underline font-bold cursor-pointer"
+                    className="text-teal-700 hover:underline font-bold cursor-pointer text-[11px] whitespace-nowrap"
                   >
                     Select All ({VMS_FUNCTION_DEFINITIONS.length})
                   </button>
@@ -667,7 +793,7 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
                   <button
                     type="button"
                     onClick={() => setActiveFunctions([])}
-                    className="text-rose-600 hover:underline font-bold cursor-pointer"
+                    className="text-rose-600 hover:underline font-bold cursor-pointer text-[11px] whitespace-nowrap"
                   >
                     Deselect All
                   </button>
@@ -675,66 +801,92 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
               </div>
 
               {Object.entries(categorizedFunctions).map(([catKey, fns]) => {
+                if (fns.length === 0) return null;
                 const catMeta = CATEGORY_NAMES[catKey] || {
                   label: catKey,
+                  functionNumber: 1,
                   icon: Layers,
                   color: 'text-slate-700 bg-slate-50 border-slate-200',
+                  description: 'Functional capabilities.',
                 };
                 const CatIcon = catMeta.icon;
+                const grantedInGroup = fns.filter((fn) => activeFunctions.includes(fn.id)).length;
 
                 return (
                   <div key={catKey} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
-                    <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`p-1 rounded-md border ${catMeta.color}`}>
-                          <CatIcon className="w-3.5 h-3.5" />
+                    {/* Function Group Header (Sidebar Section) */}
+                    <div className="px-4 py-3 bg-slate-50/90 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`p-1.5 rounded-lg border ${catMeta.color} shrink-0`}>
+                          <CatIcon className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-bold text-[#172B3A]">{catMeta.label}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono">
+                              Function {catMeta.functionNumber}
+                            </span>
+                            <span className="text-slate-300">•</span>
+                            <h4 className="text-xs font-black text-[#172B3A] tracking-tight">{catMeta.label}</h4>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.2 rounded-full border ${
+                                grantedInGroup === fns.length
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  : grantedInGroup > 0
+                                  ? 'bg-teal-50 text-teal-800 border-teal-200'
+                                  : 'bg-slate-100 text-slate-500 border-slate-200'
+                              }`}
+                            >
+                              {grantedInGroup} / {fns.length} Sub-functions Granted
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5 truncate">{catMeta.description}</p>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 text-[11px]">
+                      <div className="flex items-center gap-2 text-[11px] shrink-0 self-end sm:self-center">
                         <button
                           type="button"
                           onClick={() => {
                             const newActive = Array.from(new Set([...activeFunctions, ...fns.map((f) => f.id)]));
                             setActiveFunctions(newActive);
                           }}
-                          className="text-teal-700 hover:underline font-semibold cursor-pointer"
+                          className="px-2 py-1 rounded bg-teal-50 hover:bg-teal-100 text-teal-800 font-semibold cursor-pointer border border-teal-200"
                         >
-                          Enable All
+                          Enable All ({fns.length})
                         </button>
-                        <span className="text-slate-300">|</span>
                         <button
                           type="button"
                           onClick={() => {
                             const idsToRemove = new Set(fns.map((f) => f.id));
                             setActiveFunctions(activeFunctions.filter((id) => !idsToRemove.has(id)));
                           }}
-                          className="text-rose-600 hover:underline font-semibold cursor-pointer"
+                          className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 font-semibold cursor-pointer border border-rose-200"
                         >
                           Disable All
                         </button>
                       </div>
                     </div>
 
+                    {/* Sub-functions List (Sidebar Menu Items) */}
                     <div className="divide-y divide-slate-100 p-2">
                       {fns.map((fn) => {
                         const isEnabled = activeFunctions.includes(fn.id);
+                        const SubIcon = SUBFUNCTION_ICONS[fn.id] || Layers;
 
                         return (
                           <div
                             key={fn.id}
                             onClick={() => handleToggleFunctionInRole(fn.id)}
-                            className={`p-3 rounded-lg transition cursor-pointer flex items-start justify-between gap-3 ${
-                              isEnabled ? 'bg-teal-50/40 hover:bg-teal-50/70' : 'hover:bg-slate-50 opacity-75'
+                            className={`p-3 rounded-xl transition cursor-pointer flex items-start justify-between gap-3 ${
+                              isEnabled ? 'bg-teal-50/50 hover:bg-teal-50/80 border border-teal-100' : 'hover:bg-slate-50 border border-transparent opacity-80'
                             }`}
                           >
-                            <div className="flex items-start gap-3">
-                              <div className="pt-0.5">
+                            <div className="flex items-start gap-3 min-w-0">
+                              <div className="pt-0.5 shrink-0">
                                 <div
-                                  className={`w-5 h-5 rounded flex items-center justify-center border transition ${
+                                  className={`w-5 h-5 rounded-md flex items-center justify-center border transition ${
                                     isEnabled
-                                      ? 'bg-teal-700 border-teal-700 text-white'
+                                      ? 'bg-teal-700 border-teal-700 text-white shadow-2xs'
                                       : 'border-slate-300 bg-white'
                                   }`}
                                 >
@@ -742,23 +894,47 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
                                 </div>
                               </div>
 
-                              <div>
+                              <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-xs font-bold text-[#172B3A]">{fn.name}</span>
-                                  <span className="text-[10px] font-mono text-slate-400 uppercase">[{fn.id}]</span>
+                                  <div className="flex items-center gap-1.5">
+                                    <SubIcon className="w-3.5 h-3.5 text-slate-600" />
+                                    <span className="text-xs font-bold text-[#172B3A]">{fn.name}</span>
+                                  </div>
+                                  <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                                    [{fn.id}]
+                                  </span>
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-medium border border-indigo-100">
+                                    Sidebar Item
+                                  </span>
                                 </div>
-                                <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+
+                                <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
                                   {fn.description}
                                 </p>
+
+                                {/* Granular sub-capabilities pills */}
+                                {fn.subCapabilities && fn.subCapabilities.length > 0 && (
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                                    <span className="text-[10px] font-semibold text-slate-400">Sub-features:</span>
+                                    {fn.subCapabilities.map((cap) => (
+                                      <span
+                                        key={cap}
+                                        className="text-[10px] bg-white border border-slate-200 text-slate-700 px-1.5 py-0.2 rounded-md font-medium"
+                                      >
+                                        {cap}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
 
                             <div className="shrink-0 pt-0.5">
                               <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                                   isEnabled
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-slate-100 text-slate-500'
+                                    ? 'bg-emerald-100 text-emerald-900 border-emerald-200'
+                                    : 'bg-slate-100 text-slate-500 border-slate-200'
                                 }`}
                               >
                                 {isEnabled ? 'GRANTED' : 'DENIED'}
@@ -1220,43 +1396,79 @@ export const RoleWorkflowManagementTab: React.FC<RoleWorkflowManagementTabProps>
               Check the functional modules below that you wish to <strong>RESTRICT / BLOCK</strong> for this specific user, even if their assigned role normally permits it.
             </p>
 
-            <div className="max-h-72 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 p-2">
-              {VMS_FUNCTION_DEFINITIONS.map((fn) => {
-                const isRestricted = userRestrictions.includes(fn.id);
-                const isRolePermitted = storageService
-                  .getRolePermissions(selectedUserForLimiting.role)
-                  .includes(fn.id);
+            <div className="max-h-80 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 p-2 space-y-3">
+              {Object.entries(CATEGORY_NAMES).map(([catKey, catMeta]) => {
+                const fns = VMS_FUNCTION_DEFINITIONS.filter((f) => f.category === catKey);
+                if (fns.length === 0) return null;
+                const CatIcon = catMeta.icon;
+                const blockedCount = fns.filter((fn) => userRestrictions.includes(fn.id)).length;
 
                 return (
-                  <div
-                    key={fn.id}
-                    onClick={() => handleToggleUserRestriction(fn.id)}
-                    className={`p-2.5 rounded-lg transition cursor-pointer flex items-center justify-between gap-3 ${
-                      isRestricted ? 'bg-amber-50/70 border border-amber-200' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <div>
+                  <div key={catKey} className="space-y-1.5 pt-1">
+                    <div className="px-2.5 py-1.5 bg-slate-100/90 rounded-lg flex items-center justify-between text-[11px] font-bold text-slate-800 border border-slate-200">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">{fn.name}</span>
-                        {!isRolePermitted && (
-                          <span className="text-[10px] text-slate-400 italic">
-                            (Role lacks default access)
-                          </span>
-                        )}
+                        <div className={`p-1 rounded ${catMeta.color}`}>
+                          <CatIcon className="w-3.5 h-3.5" />
+                        </div>
+                        <span>Function {catMeta.functionNumber}: {catMeta.label}</span>
                       </div>
-                      <span className="text-[11px] text-slate-500 line-clamp-1">{fn.description}</span>
+                      <span className="text-[10px] font-mono text-slate-500">
+                        {blockedCount > 0 ? (
+                          <span className="text-amber-700 font-bold">{blockedCount} Blocked</span>
+                        ) : (
+                          <span className="text-emerald-700 font-bold">All Allowed</span>
+                        )}
+                      </span>
                     </div>
 
-                    <div className="shrink-0">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                          isRestricted
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {isRestricted ? 'BLOCKED' : 'ALLOWED'}
-                      </span>
+                    <div className="divide-y divide-slate-100 pl-1">
+                      {fns.map((fn) => {
+                        const isRestricted = userRestrictions.includes(fn.id);
+                        const isRolePermitted = storageService
+                          .getRolePermissions(selectedUserForLimiting.role)
+                          .includes(fn.id);
+                        const SubIcon = SUBFUNCTION_ICONS[fn.id] || Layers;
+
+                        return (
+                          <div
+                            key={fn.id}
+                            onClick={() => handleToggleUserRestriction(fn.id)}
+                            className={`p-2.5 rounded-lg transition cursor-pointer flex items-center justify-between gap-3 ${
+                              isRestricted ? 'bg-amber-50/70 border border-amber-200' : 'hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-1.5">
+                                  <SubIcon className="w-3.5 h-3.5 text-slate-600" />
+                                  <span className="text-xs font-bold text-slate-900">{fn.name}</span>
+                                </div>
+                                <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 rounded">
+                                  [{fn.id}]
+                                </span>
+                                {!isRolePermitted && (
+                                  <span className="text-[10px] text-slate-400 italic">
+                                    (Role lacks default access)
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{fn.description}</span>
+                            </div>
+
+                            <div className="shrink-0">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                  isRestricted
+                                    ? 'bg-amber-500 text-white'
+                                    : 'bg-emerald-100 text-emerald-800'
+                                }`}
+                              >
+                                {isRestricted ? 'BLOCKED' : 'ALLOWED'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
