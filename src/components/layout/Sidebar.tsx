@@ -605,7 +605,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
         <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>VMS v3.4 Enterprise</span>
         </div>
       </div>
     </aside>
