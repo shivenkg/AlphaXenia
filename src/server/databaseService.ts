@@ -128,6 +128,7 @@ export class DatabaseService {
     return `
 -- ============================================================================
 -- Enterprise Visitor Management System (VMS) - PostgreSQL Schema DDL
+-- Complete Application Schema (All 19 Domain Entities)
 -- Project Host: db.eonmoodozhicjlgnmzkx.supabase.co:5432
 -- ============================================================================
 
@@ -291,7 +292,26 @@ CREATE TABLE IF NOT EXISTS public.badge_templates (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 10. Hardware Devices (Printers, Scanners, Kiosks)
+-- 10. Badge Print Jobs
+CREATE TABLE IF NOT EXISTS public.badge_print_jobs (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+    badge_id VARCHAR(64) NOT NULL,
+    visitor_name VARCHAR(255) NOT NULL,
+    visitor_id VARCHAR(64) NOT NULL,
+    site_id VARCHAR(64) NOT NULL,
+    gate_id VARCHAR(64),
+    printer_id VARCHAR(64),
+    printer_name VARCHAR(255),
+    status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED',
+    retry_count INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    is_reprint BOOLEAN NOT NULL DEFAULT FALSE,
+    reprint_reason TEXT
+);
+
+-- 11. Hardware Devices (Printers, Scanners, Kiosks)
 CREATE TABLE IF NOT EXISTS public.hardware_devices (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
@@ -307,7 +327,7 @@ CREATE TABLE IF NOT EXISTS public.hardware_devices (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 11. Immutable Audit Events
+-- 12. Immutable Audit Events
 CREATE TABLE IF NOT EXISTS public.audit_events (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL,
@@ -322,7 +342,91 @@ CREATE TABLE IF NOT EXISTS public.audit_events (
     ip_address VARCHAR(64) DEFAULT '127.0.0.1'
 );
 
--- 12. Database Connection Audit Logs
+-- 13. Edge Gate Sync Events
+CREATE TABLE IF NOT EXISTS public.edge_sync_events (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+    site_id VARCHAR(64),
+    gate_id VARCHAR(64),
+    event_type VARCHAR(64) NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}',
+    captured_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    synced_at TIMESTAMPTZ,
+    status VARCHAR(32) NOT NULL DEFAULT 'SYNCED',
+    hash VARCHAR(128)
+);
+
+-- 14. UAT Test Cases & Quality Assurance Logs
+CREATE TABLE IF NOT EXISTS public.uat_test_cases (
+    id VARCHAR(64) PRIMARY KEY,
+    code VARCHAR(64) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(64) NOT NULL,
+    preconditions TEXT,
+    test_steps JSONB NOT NULL DEFAULT '[]',
+    expected_result TEXT,
+    status VARCHAR(32) NOT NULL DEFAULT 'PASSED'
+);
+
+-- 15. SaaS License Records
+CREATE TABLE IF NOT EXISTS public.saas_licenses (
+    id VARCHAR(64) PRIMARY KEY,
+    license_key VARCHAR(128) NOT NULL UNIQUE,
+    tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+    tenant_name VARCHAR(255) NOT NULL,
+    tier VARCHAR(32) NOT NULL DEFAULT 'ENTERPRISE',
+    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    issued_to VARCHAR(255) NOT NULL,
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    grace_period_days INT NOT NULL DEFAULT 14,
+    quota JSONB NOT NULL DEFAULT '{}',
+    entitlements JSONB NOT NULL DEFAULT '{}'
+);
+
+-- 16. Whitelabel Branding Profiles
+CREATE TABLE IF NOT EXISTS public.whitelabel_brandings (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+    company_name VARCHAR(255) NOT NULL,
+    portal_title VARCHAR(255) NOT NULL,
+    tagline TEXT,
+    primary_color VARCHAR(32) NOT NULL DEFAULT '#123B5D',
+    secondary_color VARCHAR(32),
+    font_family VARCHAR(64) NOT NULL DEFAULT 'Inter, sans-serif',
+    header_background VARCHAR(32) NOT NULL DEFAULT 'DARK_NAVY',
+    config JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 17. Custom Role Definitions & Dynamic RBAC
+CREATE TABLE IF NOT EXISTS public.role_definitions (
+    id VARCHAR(64) PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    description TEXT,
+    badge_color VARCHAR(32) NOT NULL DEFAULT 'blue',
+    security_tier VARCHAR(32) NOT NULL DEFAULT 'TIER_1',
+    is_system_role BOOLEAN NOT NULL DEFAULT FALSE,
+    permissions JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 18. Google Sheets Integration Configs
+CREATE TABLE IF NOT EXISTS public.google_sheet_configs (
+    id VARCHAR(64) PRIMARY KEY,
+    tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+    spreadsheet_id VARCHAR(255) NOT NULL,
+    spreadsheet_url TEXT,
+    sheet_name VARCHAR(255) NOT NULL DEFAULT 'Visitor_Log_2026',
+    sync_mode VARCHAR(32) NOT NULL DEFAULT 'REALTIME_CHECKIN',
+    auto_sync_on_check_in BOOLEAN NOT NULL DEFAULT TRUE,
+    auto_sync_on_check_out BOOLEAN NOT NULL DEFAULT TRUE,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    last_synced_at TIMESTAMPTZ,
+    sync_status VARCHAR(32) NOT NULL DEFAULT 'CONNECTED'
+);
+
+-- 19. Database Connection & Migration Audit Logs
 CREATE TABLE IF NOT EXISTS public.database_audit_logs (
     id VARCHAR(64) PRIMARY KEY,
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -344,6 +448,13 @@ CREATE INDEX IF NOT EXISTS idx_visitors_tenant ON public.visitors(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_visits_state ON public.visits(state);
 CREATE INDEX IF NOT EXISTS idx_visits_pass_token ON public.visits(pass_token);
 CREATE INDEX IF NOT EXISTS idx_visits_visitor ON public.visits(visitor_id);
+CREATE INDEX IF NOT EXISTS idx_print_jobs_badge ON public.badge_print_jobs(badge_id);
+CREATE INDEX IF NOT EXISTS idx_print_jobs_tenant ON public.badge_print_jobs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_edge_sync_tenant ON public.edge_sync_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_uat_cases_code ON public.uat_test_cases(code);
+CREATE INDEX IF NOT EXISTS idx_saas_license_tenant ON public.saas_licenses(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_branding_tenant ON public.whitelabel_brandings(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sheets_tenant ON public.google_sheet_configs(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON public.audit_events(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
 `;
@@ -370,7 +481,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
 
       return {
         success: true,
-        message: `Database schema created successfully on Supabase PostgreSQL (${tablesCreated.length} tables verified).`,
+        message: `Complete application database schema created successfully on Supabase PostgreSQL (${tablesCreated.length} tables verified).`,
         tablesCreated,
         durationMs: Date.now() - startTime,
       };
@@ -385,7 +496,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       return {
         success: false,
         message: isAuthFail
-          ? 'Authentication failed: Please provide the Supabase database password in the connection settings.'
+          ? 'Authentication required: Please enter the Supabase database password in the connection settings.'
           : msg,
         error: msg,
         durationMs: Date.now() - startTime,
@@ -394,14 +505,14 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
     }
   }
 
-  public static async syncDummyData(config: DatabaseConnectionConfig): Promise<DbSyncResult> {
+  public static async syncAllData(config: Partial<DatabaseConnectionConfig>, localData: any = {}): Promise<DbSyncResult> {
     const startTime = Date.now();
     const client = this.getPgClient(config);
 
     try {
       await client.connect();
 
-      // Ensure schema is present
+      // Ensure complete 19-table schema is present
       await client.query(this.getSchemaSql());
 
       const recordsSynced: Record<string, number> = {
@@ -414,12 +525,39 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
         visitors: 0,
         visits: 0,
         badge_templates: 0,
+        badge_print_jobs: 0,
         hardware_devices: 0,
         audit_events: 0,
+        edge_sync_events: 0,
+        uat_test_cases: 0,
+        saas_licenses: 0,
+        whitelabel_brandings: 0,
+        role_definitions: 0,
+        google_sheet_configs: 0,
       };
 
+      // Extract datasets with fallback to initial mock data if local data array is empty
+      const tenants = (localData?.tenants && localData.tenants.length > 0) ? localData.tenants : INITIAL_TENANTS;
+      const sites = (localData?.sites && localData.sites.length > 0) ? localData.sites : INITIAL_SITES;
+      const zones = (localData?.zones && localData.zones.length > 0) ? localData.zones : INITIAL_ZONES;
+      const gates = (localData?.gates && localData.gates.length > 0) ? localData.gates : INITIAL_GATES;
+      const departments = (localData?.departments && localData.departments.length > 0) ? localData.departments : INITIAL_DEPARTMENTS;
+      const users = (localData?.users && localData.users.length > 0) ? localData.users : INITIAL_USERS;
+      const visitors = (localData?.visitors && localData.visitors.length > 0) ? localData.visitors : INITIAL_VISITORS;
+      const visits = (localData?.visits && localData.visits.length > 0) ? localData.visits : INITIAL_VISITS;
+      const badgeTemplates = (localData?.badgeTemplates && localData.badgeTemplates.length > 0) ? localData.badgeTemplates : INITIAL_BADGE_TEMPLATES;
+      const printJobs = (localData?.printJobs && localData.printJobs.length > 0) ? localData.printJobs : [];
+      const devices = (localData?.devices && localData.devices.length > 0) ? localData.devices : INITIAL_DEVICES;
+      const auditEvents = (localData?.auditEvents && localData.auditEvents.length > 0) ? localData.auditEvents : INITIAL_AUDIT_EVENTS;
+      const edgeSyncEvents = (localData?.edgeSyncEvents && localData.edgeSyncEvents.length > 0) ? localData.edgeSyncEvents : INITIAL_EDGE_SYNC_EVENTS;
+      const uatCases = (localData?.uatCases && localData.uatCases.length > 0) ? localData.uatCases : INITIAL_UAT_CASES;
+      const roleDefinitions = localData?.roleDefinitions ? (Array.isArray(localData.roleDefinitions) ? localData.roleDefinitions : Object.values(localData.roleDefinitions)) : [];
+      const saasLicense = localData?.saasLicense;
+      const whitelabelBranding = localData?.whitelabelBranding;
+      const googleSheetConfig = localData?.googleSheetConfig;
+
       // 1. Sync Tenants
-      for (const t of INITIAL_TENANTS) {
+      for (const t of tenants) {
         await client.query(
           `
           INSERT INTO public.tenants (id, code, name, tier, status, timezone, locale, database_ref, database_health, migration_version, retention_days, features, branding, whitelabel_branding)
@@ -430,6 +568,9 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             tier = EXCLUDED.tier,
             status = EXCLUDED.status,
             database_health = EXCLUDED.database_health,
+            features = EXCLUDED.features,
+            branding = EXCLUDED.branding,
+            whitelabel_branding = EXCLUDED.whitelabel_branding,
             updated_at = NOW();
         `,
           [
@@ -438,12 +579,12 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             t.name,
             t.tier,
             t.status,
-            t.timezone,
-            t.locale,
-            t.databaseRef,
-            t.databaseHealth,
-            t.migrationVersion,
-            t.retentionDays,
+            t.timezone || 'Asia/Kolkata',
+            t.locale || 'en-IN',
+            t.databaseRef || 'postgres',
+            t.databaseHealth || 'HEALTHY',
+            t.migrationVersion || '2026.09.v14',
+            t.retentionDays || 365,
             JSON.stringify(t.features || {}),
             JSON.stringify(t.branding || {}),
             JSON.stringify(t.whitelabelBranding || {}),
@@ -453,7 +594,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       }
 
       // 2. Sync Sites
-      for (const s of INITIAL_SITES) {
+      for (const s of sites) {
         await client.query(
           `
           INSERT INTO public.sites (id, tenant_id, name, code, timezone, address, status, visitor_policy, requires_host_approval, requires_security_approval)
@@ -461,6 +602,9 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
           ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
             address = EXCLUDED.address,
+            status = EXCLUDED.status,
+            requires_host_approval = EXCLUDED.requires_host_approval,
+            requires_security_approval = EXCLUDED.requires_security_approval,
             updated_at = NOW();
         `,
           [
@@ -468,49 +612,53 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             s.tenantId,
             s.name,
             s.code,
-            s.timezone,
+            s.timezone || 'Asia/Kolkata',
             s.address,
             s.status,
-            s.visitorPolicy,
-            s.requiresHostApproval,
-            s.requiresSecurityApproval,
+            s.visitorPolicy || null,
+            s.requiresHostApproval ?? true,
+            s.requiresSecurityApproval ?? false,
           ]
         );
         recordsSynced.sites++;
       }
 
       // 3. Sync Building Zones
-      for (const z of INITIAL_ZONES) {
+      for (const z of zones) {
         await client.query(
           `
           INSERT INTO public.building_zones (id, site_id, name, code, security_level, muster_point, max_capacity)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
           ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
-            muster_point = EXCLUDED.muster_point;
+            security_level = EXCLUDED.security_level,
+            muster_point = EXCLUDED.muster_point,
+            max_capacity = EXCLUDED.max_capacity;
         `,
-          [z.id, z.siteId, z.name, z.code, z.securityLevel, z.musterPoint, z.maxCapacity]
+          [z.id, z.siteId, z.name, z.code, z.securityLevel || 'LOW', z.musterPoint, z.maxCapacity || 150]
         );
         recordsSynced.building_zones++;
       }
 
       // 4. Sync Gates
-      for (const g of INITIAL_GATES) {
+      for (const g of gates) {
         await client.query(
           `
           INSERT INTO public.gates (id, site_id, name, code, type, operating_status, assigned_printer_id, assigned_terminal_id)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
           ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
-            operating_status = EXCLUDED.operating_status;
+            operating_status = EXCLUDED.operating_status,
+            assigned_printer_id = EXCLUDED.assigned_printer_id,
+            assigned_terminal_id = EXCLUDED.assigned_terminal_id;
         `,
           [
             g.id,
             g.siteId,
             g.name,
             g.code,
-            g.type,
-            g.operatingStatus,
+            g.type || 'BIDIRECTIONAL',
+            g.operatingStatus || 'OPEN',
             g.assignedPrinterId || null,
             g.assignedTerminalId || null,
           ]
@@ -519,7 +667,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       }
 
       // 5. Sync Departments
-      for (const d of INITIAL_DEPARTMENTS) {
+      for (const d of departments) {
         await client.query(
           `
           INSERT INTO public.departments (id, tenant_id, name, code, lead_approver_id, lead_approver_name)
@@ -534,7 +682,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       }
 
       // 6. Sync App Users
-      for (const u of INITIAL_USERS) {
+      for (const u of users) {
         await client.query(
           `
           INSERT INTO public.app_users (id, tenant_id, name, login_id, email, password_hash, phone_number, role, department_id, department_name, site_scopes, gate_scopes, mfa_enabled, status, last_login_at, notification_settings)
@@ -543,6 +691,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             name = EXCLUDED.name,
             role = EXCLUDED.role,
             status = EXCLUDED.status,
+            site_scopes = EXCLUDED.site_scopes,
+            gate_scopes = EXCLUDED.gate_scopes,
             notification_settings = EXCLUDED.notification_settings;
         `,
           [
@@ -551,15 +701,15 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             u.name,
             u.loginId,
             u.email,
-            u.password, // hashed/stored
-            u.phoneNumber,
+            u.password || 'argon2id$hashed',
+            u.phoneNumber || '+91 98000 00000',
             u.role,
             u.departmentId || null,
             u.departmentName || null,
             JSON.stringify(u.siteScopes || ['*']),
             JSON.stringify(u.gateScopes || ['*']),
-            u.mfaEnabled,
-            u.status,
+            u.mfaEnabled ?? true,
+            u.status || 'ACTIVE',
             u.lastLoginAt ? new Date(u.lastLoginAt) : null,
             JSON.stringify(u.notificationSettings || {}),
           ]
@@ -568,7 +718,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       }
 
       // 7. Sync Visitors
-      for (const v of INITIAL_VISITORS) {
+      for (const v of visitors) {
         await client.query(
           `
           INSERT INTO public.visitors (id, tenant_id, full_name, email, phone_number, company, category, document_type, masked_document_number, consent_signed, consent_signed_at, nda_signed, photo_url, watchlist_status, total_visits, last_visit_at)
@@ -577,6 +727,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             full_name = EXCLUDED.full_name,
             company = EXCLUDED.company,
             total_visits = EXCLUDED.total_visits,
+            watchlist_status = EXCLUDED.watchlist_status,
+            photo_url = EXCLUDED.photo_url,
             last_visit_at = EXCLUDED.last_visit_at;
         `,
           [
@@ -586,14 +738,14 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             v.email,
             v.phoneNumber,
             v.company,
-            v.category,
-            v.documentType,
-            v.maskedDocumentNumber,
-            v.consentSigned,
+            v.category || 'BUSINESS_GUEST',
+            v.documentType || 'NATIONAL_ID',
+            v.maskedDocumentNumber || 'ID-XXXX',
+            v.consentSigned ?? true,
             v.consentSignedAt ? new Date(v.consentSignedAt) : null,
-            v.ndaSigned,
+            v.ndaSigned ?? false,
             v.photoUrl || null,
-            v.watchlistStatus,
+            v.watchlistStatus || 'CLEAN',
             v.totalVisits || 1,
             v.lastVisitAt ? new Date(v.lastVisitAt) : null,
           ]
@@ -602,7 +754,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       }
 
       // 8. Sync Visits
-      for (const vs of INITIAL_VISITS) {
+      for (const vs of visits) {
         await client.query(
           `
           INSERT INTO public.visits (id, tenant_id, site_id, gate_id, visitor_id, host_user_id, department_id, purpose, scheduled_start, scheduled_end, actual_check_in, actual_check_out, state, state_reason, pass_token, pass_token_expires_at, badge_number, host_approved, security_approved, assigned_zone_id)
@@ -629,8 +781,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
             vs.actualCheckOut ? new Date(vs.actualCheckOut) : null,
             vs.state,
             vs.stateReason || null,
-            vs.passToken,
-            new Date(vs.passTokenExpiresAt),
+            vs.passToken || `PASS-${vs.id}`,
+            new Date(vs.passTokenExpiresAt || Date.now() + 86400000),
             vs.badgeNumber || null,
             Boolean(vs.approvalStatus?.hostApproved),
             Boolean(vs.approvalStatus?.securityApproved),
@@ -641,33 +793,63 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       }
 
       // 9. Sync Badge Templates
-      for (const bt of INITIAL_BADGE_TEMPLATES) {
+      for (const bt of badgeTemplates) {
         await client.query(
           `
           INSERT INTO public.badge_templates (id, tenant_id, name, type, width_mm, height_mm, show_photo, show_qr_code, header_background, instructions)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
           ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name,
-            instructions = EXCLUDED.instructions;
+            instructions = EXCLUDED.instructions,
+            header_background = EXCLUDED.header_background;
         `,
           [
             bt.id,
             bt.tenantId,
             bt.name,
             bt.type,
-            bt.widthMm,
-            bt.heightMm,
-            bt.showPhoto,
-            bt.showQrCode,
-            bt.headerBackground,
+            bt.widthMm || 54.0,
+            bt.heightMm || 86.0,
+            bt.showPhoto ?? true,
+            bt.showQrCode ?? true,
+            bt.headerBackground || '#123B5D',
             bt.instructions || '',
           ]
         );
         recordsSynced.badge_templates++;
       }
 
-      // 10. Sync Hardware Devices
-      for (const dev of INITIAL_DEVICES) {
+      // 10. Sync Badge Print Jobs
+      for (const pj of printJobs) {
+        await client.query(
+          `
+          INSERT INTO public.badge_print_jobs (id, tenant_id, badge_id, visitor_name, visitor_id, site_id, gate_id, printer_id, printer_name, status, retry_count, created_at, completed_at, is_reprint, reprint_reason)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          ON CONFLICT (id) DO NOTHING;
+        `,
+          [
+            pj.id,
+            pj.tenantId,
+            pj.badgeNumber || pj.id,
+            pj.visitorName,
+            pj.visitorId || 'v-unknown',
+            pj.siteId,
+            pj.gateId || null,
+            pj.printerId,
+            pj.printerName,
+            pj.status,
+            pj.retryCount || 0,
+            new Date(pj.createdAt || Date.now()),
+            pj.completedAt ? new Date(pj.completedAt) : null,
+            pj.isReprint ?? false,
+            pj.reprintReason || null,
+          ]
+        );
+        recordsSynced.badge_print_jobs++;
+      }
+
+      // 11. Sync Hardware Devices
+      for (const dev of devices) {
         await client.query(
           `
           INSERT INTO public.hardware_devices (id, tenant_id, site_id, gate_id, name, type, ip_address, port, status, model, last_ping_at)
@@ -693,8 +875,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
         recordsSynced.hardware_devices++;
       }
 
-      // 11. Sync Audit Events
-      for (const aud of INITIAL_AUDIT_EVENTS.slice(0, 50)) {
+      // 12. Sync Audit Events
+      for (const aud of auditEvents.slice(0, 100)) {
         await client.query(
           `
           INSERT INTO public.audit_events (id, tenant_id, timestamp, actor_id, actor_name, actor_role, action, entity_type, entity_id, details, ip_address)
@@ -718,23 +900,182 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
         recordsSynced.audit_events++;
       }
 
+      // 13. Sync Edge Events
+      for (const ed of edgeSyncEvents) {
+        await client.query(
+          `
+          INSERT INTO public.edge_sync_events (id, tenant_id, site_id, gate_id, event_type, payload, captured_at, synced_at, status, hash)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          ON CONFLICT (id) DO NOTHING;
+        `,
+          [
+            ed.id,
+            ed.tenantId,
+            ed.siteId || null,
+            ed.gateId || null,
+            ed.eventType,
+            JSON.stringify(ed.payload || {}),
+            new Date(ed.capturedAtUtc || Date.now()),
+            ed.syncedAtUtc ? new Date(ed.syncedAtUtc) : null,
+            ed.status || 'SYNCED',
+            ed.hash || null,
+          ]
+        );
+        recordsSynced.edge_sync_events++;
+      }
+
+      // 14. Sync UAT Cases
+      for (const uat of uatCases) {
+        await client.query(
+          `
+          INSERT INTO public.uat_test_cases (id, code, name, category, preconditions, test_steps, expected_result, status)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;
+        `,
+          [
+            String(uat.id),
+            uat.code,
+            uat.name,
+            uat.category,
+            uat.preconditions || null,
+            JSON.stringify(uat.testSteps || []),
+            uat.expectedResult || null,
+            uat.status || 'PASSED',
+          ]
+        );
+        recordsSynced.uat_test_cases++;
+      }
+
+      // 15. Sync SaaS License if present
+      if (saasLicense) {
+        await client.query(
+          `
+          INSERT INTO public.saas_licenses (id, license_key, tenant_id, tenant_name, tier, status, issued_to, issued_at, expires_at, grace_period_days, quota, entitlements)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          ON CONFLICT (id) DO UPDATE SET
+            status = EXCLUDED.status,
+            tier = EXCLUDED.tier,
+            quota = EXCLUDED.quota;
+        `,
+          [
+            saasLicense.licenseKey || 'license-primary',
+            saasLicense.licenseKey || 'primary-key',
+            saasLicense.tenantId || 'ten-tata-01',
+            saasLicense.tenantName || 'TATA Consultancy Services',
+            saasLicense.tier || 'ENTERPRISE',
+            saasLicense.status || 'ACTIVE',
+            saasLicense.issuedTo || 'Admin',
+            new Date(saasLicense.issuedAt || Date.now()),
+            new Date(saasLicense.expiresAt || Date.now() + 31536000000),
+            saasLicense.gracePeriodDays || 14,
+            JSON.stringify(saasLicense.quota || {}),
+            JSON.stringify(saasLicense.entitlements || {}),
+          ]
+        );
+        recordsSynced.saas_licenses++;
+      }
+
+      // 16. Sync Whitelabel Branding if present
+      if (whitelabelBranding) {
+        await client.query(
+          `
+          INSERT INTO public.whitelabel_brandings (id, tenant_id, company_name, portal_title, tagline, primary_color, secondary_color, font_family, header_background, config, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+          ON CONFLICT (id) DO UPDATE SET
+            company_name = EXCLUDED.company_name,
+            portal_title = EXCLUDED.portal_title,
+            primary_color = EXCLUDED.primary_color,
+            config = EXCLUDED.config,
+            updated_at = NOW();
+        `,
+          [
+            'branding-primary',
+            'ten-tata-01',
+            whitelabelBranding.companyName || 'Enterprise VMS',
+            whitelabelBranding.portalTitle || 'Visitor Access Control',
+            whitelabelBranding.tagline || '',
+            whitelabelBranding.primaryColor || '#123B5D',
+            whitelabelBranding.secondaryColor || '#0284c7',
+            whitelabelBranding.fontFamily || 'Inter, sans-serif',
+            whitelabelBranding.headerBackground || 'DARK_NAVY',
+            JSON.stringify(whitelabelBranding),
+          ]
+        );
+        recordsSynced.whitelabel_brandings++;
+      }
+
+      // 17. Sync Role Definitions
+      for (const rd of roleDefinitions) {
+        await client.query(
+          `
+          INSERT INTO public.role_definitions (id, label, description, badge_color, security_tier, is_system_role, permissions)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          ON CONFLICT (id) DO UPDATE SET
+            label = EXCLUDED.label,
+            permissions = EXCLUDED.permissions;
+        `,
+          [
+            rd.id,
+            rd.label,
+            rd.description || '',
+            rd.badgeColor || 'blue',
+            rd.securityTier || 'TIER_1',
+            rd.isSystemRole ?? false,
+            JSON.stringify(rd.permissions || []),
+          ]
+        );
+        recordsSynced.role_definitions++;
+      }
+
+      // 18. Sync Google Sheet Config if present
+      if (googleSheetConfig) {
+        await client.query(
+          `
+          INSERT INTO public.google_sheet_configs (id, tenant_id, spreadsheet_id, spreadsheet_url, sheet_name, sync_mode, auto_sync_on_check_in, auto_sync_on_check_out, enabled, last_synced_at, sync_status)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          ON CONFLICT (id) DO UPDATE SET
+            spreadsheet_id = EXCLUDED.spreadsheet_id,
+            sheet_name = EXCLUDED.sheet_name,
+            sync_status = EXCLUDED.sync_status;
+        `,
+          [
+            'sheet-config-primary',
+            'ten-tata-01',
+            googleSheetConfig.spreadsheetId || 'default-sheet-id',
+            googleSheetConfig.spreadsheetUrl || '',
+            googleSheetConfig.sheetName || 'Visitor_Log_2026',
+            googleSheetConfig.syncMode || 'REALTIME_CHECKIN',
+            googleSheetConfig.autoSyncOnCheckIn ?? true,
+            googleSheetConfig.autoSyncOnCheckOut ?? true,
+            googleSheetConfig.enabled ?? true,
+            googleSheetConfig.lastSyncedAt ? new Date(googleSheetConfig.lastSyncedAt) : null,
+            googleSheetConfig.syncStatus || 'CONNECTED',
+          ]
+        );
+        recordsSynced.google_sheet_configs++;
+      }
+
+      const totalRecords = Object.values(recordsSynced).reduce((a, b) => a + b, 0);
+
       // Record Sync Audit Log
       await client.query(
         `
         INSERT INTO public.database_audit_logs (id, timestamp, action, performed_by, details, status, latency_ms)
-        VALUES ($1, NOW(), 'DATABASE_SYNC', 'Platform Super Admin', 'Full dummy data synchronization completed across all entities.', 'SUCCESS', $2)
+        VALUES ($1, NOW(), 'DATABASE_SYNC_ALL', 'Platform Super Admin', $2, 'SUCCESS', $3)
         ON CONFLICT (id) DO NOTHING;
       `,
-        [`db-sync-${Date.now()}`, Date.now() - startTime]
+        [
+          `db-sync-${Date.now()}`,
+          `Full local application state (${totalRecords} records across 18 entities) synchronized to Supabase PostgreSQL cluster.`,
+          Date.now() - startTime,
+        ]
       );
 
       await client.end();
 
-      const totalRecords = Object.values(recordsSynced).reduce((a, b) => a + b, 0);
-
       return {
         success: true,
-        message: `Successfully synchronized ${totalRecords} records across all 11 tables to Supabase PostgreSQL (host: ${config.host || SUPABASE_DEFAULT_HOST}).`,
+        message: `Successfully synchronized ${totalRecords} records across all 18 entities and schema tables to Supabase PostgreSQL (host: ${config.host || SUPABASE_DEFAULT_HOST}).`,
         recordsSynced,
         totalRecordsSynced: totalRecords,
         durationMs: Date.now() - startTime,
@@ -744,13 +1085,13 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
         await client.end();
       } catch {}
 
-      const msg = err?.message || 'Failed to sync dummy data';
+      const msg = err?.message || 'Failed to sync local data to database';
       const isAuthFail = msg.includes('password authentication') || msg.includes('SASL');
 
       return {
         success: false,
         message: isAuthFail
-          ? 'Authentication failed: Please provide the Supabase database password in the connection settings to sync data.'
+          ? 'Authentication required: Please enter the Supabase database password in the connection settings to push live data over port 5432.'
           : msg,
         error: msg,
         durationMs: Date.now() - startTime,
@@ -759,7 +1100,12 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
     }
   }
 
-  public static generateFullSqlScript(): string {
+  // Backwards compatibility
+  public static async syncDummyData(config: DatabaseConnectionConfig): Promise<DbSyncResult> {
+    return this.syncAllData(config, {});
+  }
+
+  public static generateFullSqlScript(localData: any = {}): string {
     const ddl = this.getSchemaSql();
 
     const escapeSql = (str: string | null | undefined): string => {
@@ -771,8 +1117,27 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
       return `'${JSON.stringify(obj || {}).replace(/'/g, "''")}'::jsonb`;
     };
 
+    const tenants = (localData?.tenants && localData.tenants.length > 0) ? localData.tenants : INITIAL_TENANTS;
+    const sites = (localData?.sites && localData.sites.length > 0) ? localData.sites : INITIAL_SITES;
+    const zones = (localData?.zones && localData.zones.length > 0) ? localData.zones : INITIAL_ZONES;
+    const gates = (localData?.gates && localData.gates.length > 0) ? localData.gates : INITIAL_GATES;
+    const departments = (localData?.departments && localData.departments.length > 0) ? localData.departments : INITIAL_DEPARTMENTS;
+    const users = (localData?.users && localData.users.length > 0) ? localData.users : INITIAL_USERS;
+    const visitors = (localData?.visitors && localData.visitors.length > 0) ? localData.visitors : INITIAL_VISITORS;
+    const visits = (localData?.visits && localData.visits.length > 0) ? localData.visits : INITIAL_VISITS;
+    const badgeTemplates = (localData?.badgeTemplates && localData.badgeTemplates.length > 0) ? localData.badgeTemplates : INITIAL_BADGE_TEMPLATES;
+    const printJobs = (localData?.printJobs && localData.printJobs.length > 0) ? localData.printJobs : [];
+    const devices = (localData?.devices && localData.devices.length > 0) ? localData.devices : INITIAL_DEVICES;
+    const auditEvents = (localData?.auditEvents && localData.auditEvents.length > 0) ? localData.auditEvents : INITIAL_AUDIT_EVENTS;
+    const edgeSyncEvents = (localData?.edgeSyncEvents && localData.edgeSyncEvents.length > 0) ? localData.edgeSyncEvents : INITIAL_EDGE_SYNC_EVENTS;
+    const uatCases = (localData?.uatCases && localData.uatCases.length > 0) ? localData.uatCases : INITIAL_UAT_CASES;
+    const roleDefinitions = localData?.roleDefinitions ? (Array.isArray(localData.roleDefinitions) ? localData.roleDefinitions : Object.values(localData.roleDefinitions)) : [];
+    const saasLicense = localData?.saasLicense;
+    const whitelabelBranding = localData?.whitelabelBranding;
+    const googleSheetConfig = localData?.googleSheetConfig;
+
     let sql = `-- ============================================================================
--- Complete Executable Supabase PostgreSQL Setup & Seed Script
+-- Complete Executable Supabase PostgreSQL Setup & Full Local Data Seed Script
 -- Project Host: ${SUPABASE_DEFAULT_HOST}
 -- Database: ${SUPABASE_DEFAULT_DB} | User: ${SUPABASE_DEFAULT_USER}
 -- Generated automatically by Enterprise Visitor Management System
@@ -781,7 +1146,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
 ${ddl}
 
 -- ============================================================================
--- SEED DATA: Synchronizing All Enterprise Mock Data
+-- SEED DATA: Synchronizing All Enterprise Local & Mock Data (18 Entities)
 -- ============================================================================
 
 BEGIN;
@@ -789,81 +1154,141 @@ BEGIN;
 -- 1. Tenants
 `;
 
-    for (const t of INITIAL_TENANTS) {
+    for (const t of tenants) {
       sql += `INSERT INTO public.tenants (id, code, name, tier, status, timezone, locale, database_ref, database_health, migration_version, retention_days, features, branding, whitelabel_branding)
-VALUES (${escapeSql(t.id)}, ${escapeSql(t.code)}, ${escapeSql(t.name)}, ${escapeSql(t.tier)}, ${escapeSql(t.status)}, ${escapeSql(t.timezone)}, ${escapeSql(t.locale)}, ${escapeSql(t.databaseRef)}, ${escapeSql(t.databaseHealth)}, ${escapeSql(t.migrationVersion)}, ${t.retentionDays}, ${escapeJson(t.features)}, ${escapeJson(t.branding)}, ${escapeJson(t.whitelabelBranding)})
+VALUES (${escapeSql(t.id)}, ${escapeSql(t.code)}, ${escapeSql(t.name)}, ${escapeSql(t.tier)}, ${escapeSql(t.status)}, ${escapeSql(t.timezone || 'Asia/Kolkata')}, ${escapeSql(t.locale || 'en-IN')}, ${escapeSql(t.databaseRef || 'postgres')}, ${escapeSql(t.databaseHealth || 'HEALTHY')}, ${escapeSql(t.migrationVersion || '2026.09.v14')}, ${t.retentionDays || 365}, ${escapeJson(t.features)}, ${escapeJson(t.branding)}, ${escapeJson(t.whitelabelBranding)})
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, updated_at = NOW();\n`;
     }
 
     sql += `\n-- 2. Sites\n`;
-    for (const s of INITIAL_SITES) {
+    for (const s of sites) {
       sql += `INSERT INTO public.sites (id, tenant_id, name, code, timezone, address, status, visitor_policy, requires_host_approval, requires_security_approval)
-VALUES (${escapeSql(s.id)}, ${escapeSql(s.tenantId)}, ${escapeSql(s.name)}, ${escapeSql(s.code)}, ${escapeSql(s.timezone)}, ${escapeSql(s.address)}, ${escapeSql(s.status)}, ${escapeSql(s.visitorPolicy)}, ${s.requiresHostApproval}, ${s.requiresSecurityApproval})
+VALUES (${escapeSql(s.id)}, ${escapeSql(s.tenantId)}, ${escapeSql(s.name)}, ${escapeSql(s.code)}, ${escapeSql(s.timezone || 'Asia/Kolkata')}, ${escapeSql(s.address)}, ${escapeSql(s.status)}, ${escapeSql(s.visitorPolicy)}, ${Boolean(s.requiresHostApproval ?? true)}, ${Boolean(s.requiresSecurityApproval ?? false)})
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, updated_at = NOW();\n`;
     }
 
     sql += `\n-- 3. Building Zones\n`;
-    for (const z of INITIAL_ZONES) {
+    for (const z of zones) {
       sql += `INSERT INTO public.building_zones (id, site_id, name, code, security_level, muster_point, max_capacity)
-VALUES (${escapeSql(z.id)}, ${escapeSql(z.siteId)}, ${escapeSql(z.name)}, ${escapeSql(z.code)}, ${escapeSql(z.securityLevel)}, ${escapeSql(z.musterPoint)}, ${z.maxCapacity})
-ON CONFLICT (id) DO NOTHING;\n`;
+VALUES (${escapeSql(z.id)}, ${escapeSql(z.siteId)}, ${escapeSql(z.name)}, ${escapeSql(z.code)}, ${escapeSql(z.securityLevel || 'LOW')}, ${escapeSql(z.musterPoint)}, ${z.maxCapacity || 150})
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, muster_point = EXCLUDED.muster_point;\n`;
     }
 
     sql += `\n-- 4. Gates\n`;
-    for (const g of INITIAL_GATES) {
+    for (const g of gates) {
       sql += `INSERT INTO public.gates (id, site_id, name, code, type, operating_status, assigned_printer_id, assigned_terminal_id)
-VALUES (${escapeSql(g.id)}, ${escapeSql(g.siteId)}, ${escapeSql(g.name)}, ${escapeSql(g.code)}, ${escapeSql(g.type)}, ${escapeSql(g.operatingStatus)}, ${escapeSql(g.assignedPrinterId)}, ${escapeSql(g.assignedTerminalId)})
-ON CONFLICT (id) DO NOTHING;\n`;
+VALUES (${escapeSql(g.id)}, ${escapeSql(g.siteId)}, ${escapeSql(g.name)}, ${escapeSql(g.code)}, ${escapeSql(g.type || 'BIDIRECTIONAL')}, ${escapeSql(g.operatingStatus || 'OPEN')}, ${escapeSql(g.assignedPrinterId)}, ${escapeSql(g.assignedTerminalId)})
+ON CONFLICT (id) DO UPDATE SET operating_status = EXCLUDED.operating_status;\n`;
     }
 
     sql += `\n-- 5. Departments\n`;
-    for (const d of INITIAL_DEPARTMENTS) {
+    for (const d of departments) {
       sql += `INSERT INTO public.departments (id, tenant_id, name, code, lead_approver_id, lead_approver_name)
 VALUES (${escapeSql(d.id)}, ${escapeSql(d.tenantId)}, ${escapeSql(d.name)}, ${escapeSql(d.code)}, ${escapeSql(d.leadApproverId)}, ${escapeSql(d.leadApproverName)})
-ON CONFLICT (id) DO NOTHING;\n`;
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, lead_approver_name = EXCLUDED.lead_approver_name;\n`;
     }
 
     sql += `\n-- 6. Application Users\n`;
-    for (const u of INITIAL_USERS) {
+    for (const u of users) {
       sql += `INSERT INTO public.app_users (id, tenant_id, name, login_id, email, password_hash, phone_number, role, department_id, department_name, site_scopes, gate_scopes, mfa_enabled, status, last_login_at, notification_settings)
-VALUES (${escapeSql(u.id)}, ${escapeSql(u.tenantId)}, ${escapeSql(u.name)}, ${escapeSql(u.loginId)}, ${escapeSql(u.email)}, ${escapeSql(u.password)}, ${escapeSql(u.phoneNumber)}, ${escapeSql(u.role)}, ${escapeSql(u.departmentId)}, ${escapeSql(u.departmentName)}, ${escapeJson(u.siteScopes || ['*'])}, ${escapeJson(u.gateScopes || ['*'])}, ${u.mfaEnabled}, ${escapeSql(u.status)}, ${u.lastLoginAt ? `'${u.lastLoginAt}'::timestamptz` : 'NULL'}, ${escapeJson(u.notificationSettings)})
-ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role;\n`;
+VALUES (${escapeSql(u.id)}, ${escapeSql(u.tenantId)}, ${escapeSql(u.name)}, ${escapeSql(u.loginId)}, ${escapeSql(u.email)}, ${escapeSql(u.password || 'argon2id$hashed')}, ${escapeSql(u.phoneNumber || '+91 98000 00000')}, ${escapeSql(u.role)}, ${escapeSql(u.departmentId)}, ${escapeSql(u.departmentName)}, ${escapeJson(u.siteScopes || ['*'])}, ${escapeJson(u.gateScopes || ['*'])}, ${Boolean(u.mfaEnabled ?? true)}, ${escapeSql(u.status || 'ACTIVE')}, ${u.lastLoginAt ? `'${u.lastLoginAt}'::timestamptz` : 'NULL'}, ${escapeJson(u.notificationSettings)})
+ON CONFLICT (id) DO UPDATE SET role = EXCLUDED.role, status = EXCLUDED.status;\n`;
     }
 
     sql += `\n-- 7. Visitors\n`;
-    for (const v of INITIAL_VISITORS) {
+    for (const v of visitors) {
       sql += `INSERT INTO public.visitors (id, tenant_id, full_name, email, phone_number, company, category, document_type, masked_document_number, consent_signed, consent_signed_at, nda_signed, photo_url, watchlist_status, total_visits, last_visit_at)
-VALUES (${escapeSql(v.id)}, ${escapeSql(v.tenantId)}, ${escapeSql(v.fullName)}, ${escapeSql(v.email)}, ${escapeSql(v.phoneNumber)}, ${escapeSql(v.company)}, ${escapeSql(v.category)}, ${escapeSql(v.documentType)}, ${escapeSql(v.maskedDocumentNumber)}, ${v.consentSigned}, ${v.consentSignedAt ? `'${v.consentSignedAt}'::timestamptz` : 'NULL'}, ${v.ndaSigned}, ${escapeSql(v.photoUrl)}, ${escapeSql(v.watchlistStatus)}, ${v.totalVisits || 1}, ${v.lastVisitAt ? `'${v.lastVisitAt}'::timestamptz` : 'NULL'})
-ON CONFLICT (id) DO NOTHING;\n`;
+VALUES (${escapeSql(v.id)}, ${escapeSql(v.tenantId)}, ${escapeSql(v.fullName)}, ${escapeSql(v.email)}, ${escapeSql(v.phoneNumber)}, ${escapeSql(v.company)}, ${escapeSql(v.category || 'BUSINESS_GUEST')}, ${escapeSql(v.documentType || 'NATIONAL_ID')}, ${escapeSql(v.maskedDocumentNumber || 'ID-XXXX')}, ${Boolean(v.consentSigned ?? true)}, ${v.consentSignedAt ? `'${v.consentSignedAt}'::timestamptz` : 'NULL'}, ${Boolean(v.ndaSigned ?? false)}, ${escapeSql(v.photoUrl)}, ${escapeSql(v.watchlistStatus || 'CLEAN')}, ${v.totalVisits || 1}, ${v.lastVisitAt ? `'${v.lastVisitAt}'::timestamptz` : 'NULL'})
+ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, total_visits = EXCLUDED.total_visits, last_visit_at = EXCLUDED.last_visit_at;\n`;
     }
 
     sql += `\n-- 8. Visits\n`;
-    for (const vs of INITIAL_VISITS) {
+    for (const vs of visits) {
       sql += `INSERT INTO public.visits (id, tenant_id, site_id, gate_id, visitor_id, host_user_id, department_id, purpose, scheduled_start, scheduled_end, actual_check_in, actual_check_out, state, state_reason, pass_token, pass_token_expires_at, badge_number, host_approved, security_approved, assigned_zone_id)
-VALUES (${escapeSql(vs.id)}, ${escapeSql(vs.tenantId)}, ${escapeSql(vs.siteId)}, ${escapeSql(vs.gateId)}, ${escapeSql(vs.visitorId)}, ${escapeSql(vs.hostUserId)}, ${escapeSql(vs.departmentId)}, ${escapeSql(vs.purpose)}, '${vs.scheduledStart}'::timestamptz, '${vs.scheduledEnd}'::timestamptz, ${vs.actualCheckIn ? `'${vs.actualCheckIn}'::timestamptz` : 'NULL'}, ${vs.actualCheckOut ? `'${vs.actualCheckOut}'::timestamptz` : 'NULL'}, ${escapeSql(vs.state)}, ${escapeSql(vs.stateReason)}, ${escapeSql(vs.passToken)}, '${vs.passTokenExpiresAt}'::timestamptz, ${escapeSql(vs.badgeNumber)}, ${Boolean(vs.approvalStatus?.hostApproved)}, ${Boolean(vs.approvalStatus?.securityApproved)}, ${escapeSql(vs.assignedZone)})
-ON CONFLICT (id) DO NOTHING;\n`;
+VALUES (${escapeSql(vs.id)}, ${escapeSql(vs.tenantId)}, ${escapeSql(vs.siteId)}, ${escapeSql(vs.gateId)}, ${escapeSql(vs.visitorId)}, ${escapeSql(vs.hostUserId)}, ${escapeSql(vs.departmentId)}, ${escapeSql(vs.purpose)}, '${vs.scheduledStart}'::timestamptz, '${vs.scheduledEnd}'::timestamptz, ${vs.actualCheckIn ? `'${vs.actualCheckIn}'::timestamptz` : 'NULL'}, ${vs.actualCheckOut ? `'${vs.actualCheckOut}'::timestamptz` : 'NULL'}, ${escapeSql(vs.state)}, ${escapeSql(vs.stateReason)}, ${escapeSql(vs.passToken || `PASS-${vs.id}`)}, '${vs.passTokenExpiresAt || vs.scheduledEnd}'::timestamptz, ${escapeSql(vs.badgeNumber)}, ${Boolean(vs.approvalStatus?.hostApproved)}, ${Boolean(vs.approvalStatus?.securityApproved)}, ${escapeSql(vs.assignedZone)})
+ON CONFLICT (id) DO UPDATE SET state = EXCLUDED.state, actual_check_in = EXCLUDED.actual_check_in, actual_check_out = EXCLUDED.actual_check_out;\n`;
     }
 
     sql += `\n-- 9. Badge Templates\n`;
-    for (const bt of INITIAL_BADGE_TEMPLATES) {
+    for (const bt of badgeTemplates) {
       sql += `INSERT INTO public.badge_templates (id, tenant_id, name, type, width_mm, height_mm, show_photo, show_qr_code, header_background, instructions)
-VALUES (${escapeSql(bt.id)}, ${escapeSql(bt.tenantId)}, ${escapeSql(bt.name)}, ${escapeSql(bt.type)}, ${bt.widthMm}, ${bt.heightMm}, ${bt.showPhoto}, ${bt.showQrCode}, ${escapeSql(bt.headerBackground)}, ${escapeSql(bt.instructions)})
-ON CONFLICT (id) DO NOTHING;\n`;
+VALUES (${escapeSql(bt.id)}, ${escapeSql(bt.tenantId)}, ${escapeSql(bt.name)}, ${escapeSql(bt.type)}, ${bt.widthMm || 54}, ${bt.heightMm || 86}, ${Boolean(bt.showPhoto ?? true)}, ${Boolean(bt.showQrCode ?? true)}, ${escapeSql(bt.headerBackground || '#123B5D')}, ${escapeSql(bt.instructions)})
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;\n`;
     }
 
-    sql += `\n-- 10. Hardware Devices\n`;
-    for (const dev of INITIAL_DEVICES) {
+    if (printJobs.length > 0) {
+      sql += `\n-- 10. Badge Print Jobs\n`;
+      for (const pj of printJobs) {
+        sql += `INSERT INTO public.badge_print_jobs (id, tenant_id, badge_id, visitor_name, visitor_id, site_id, gate_id, printer_id, printer_name, status, retry_count, created_at, completed_at, is_reprint, reprint_reason)
+VALUES (${escapeSql(pj.id)}, ${escapeSql(pj.tenantId)}, ${escapeSql(pj.badgeNumber || pj.id)}, ${escapeSql(pj.visitorName)}, ${escapeSql(pj.visitorId || 'v-unknown')}, ${escapeSql(pj.siteId)}, ${escapeSql(pj.gateId)}, ${escapeSql(pj.printerId)}, ${escapeSql(pj.printerName)}, ${escapeSql(pj.status)}, ${pj.retryCount || 0}, '${pj.createdAt}'::timestamptz, ${pj.completedAt ? `'${pj.completedAt}'::timestamptz` : 'NULL'}, ${Boolean(pj.isReprint)}, ${escapeSql(pj.reprintReason)})
+ON CONFLICT (id) DO NOTHING;\n`;
+      }
+    }
+
+    sql += `\n-- 11. Hardware Devices\n`;
+    for (const dev of devices) {
       sql += `INSERT INTO public.hardware_devices (id, tenant_id, site_id, gate_id, name, type, ip_address, port, status, model, last_ping_at)
 VALUES (${escapeSql(dev.id)}, ${escapeSql(dev.tenantId)}, ${escapeSql(dev.siteId)}, ${escapeSql(dev.gateId)}, ${escapeSql(dev.name)}, ${escapeSql(dev.type)}, ${escapeSql(dev.ipAddress)}, 9100, ${escapeSql(dev.status)}, ${escapeSql(dev.model)}, NOW())
+ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, last_ping_at = NOW();\n`;
+    }
+
+    sql += `\n-- 12. Audit Events\n`;
+    for (const aud of auditEvents.slice(0, 50)) {
+      sql += `INSERT INTO public.audit_events (id, tenant_id, timestamp, actor_id, actor_name, actor_role, action, entity_type, entity_id, details, ip_address)
+VALUES (${escapeSql(aud.id)}, ${escapeSql(aud.tenantId)}, '${aud.timestamp}'::timestamptz, ${escapeSql(aud.actorId)}, ${escapeSql(aud.actorName)}, ${escapeSql(aud.actorRole)}, ${escapeSql(aud.action)}, ${escapeSql(aud.entityType)}, ${escapeSql(aud.entityId)}, ${escapeSql(aud.details)}, ${escapeSql(aud.ipAddress || '127.0.0.1')})
 ON CONFLICT (id) DO NOTHING;\n`;
     }
 
-    sql += `\n-- 11. Database Audit Logs\n`;
+    sql += `\n-- 13. Edge Sync Events\n`;
+    for (const ed of edgeSyncEvents) {
+      sql += `INSERT INTO public.edge_sync_events (id, tenant_id, site_id, gate_id, event_type, payload, captured_at, synced_at, status, hash)
+VALUES (${escapeSql(ed.id)}, ${escapeSql(ed.tenantId)}, ${escapeSql(ed.siteId)}, ${escapeSql(ed.gateId)}, ${escapeSql(ed.eventType)}, ${escapeJson(ed.payload)}, '${ed.capturedAtUtc || new Date().toISOString()}'::timestamptz, ${ed.syncedAtUtc ? `'${ed.syncedAtUtc}'::timestamptz` : 'NULL'}, ${escapeSql(ed.status || 'SYNCED')}, ${escapeSql(ed.hash)})
+ON CONFLICT (id) DO NOTHING;\n`;
+    }
+
+    sql += `\n-- 14. UAT Test Cases\n`;
+    for (const uat of uatCases) {
+      sql += `INSERT INTO public.uat_test_cases (id, code, name, category, preconditions, test_steps, expected_result, status)
+VALUES (${escapeSql(String(uat.id))}, ${escapeSql(uat.code)}, ${escapeSql(uat.name)}, ${escapeSql(uat.category)}, ${escapeSql(uat.preconditions)}, ${escapeJson(uat.testSteps)}, ${escapeSql(uat.expectedResult)}, ${escapeSql(uat.status)})
+ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;\n`;
+    }
+
+    if (saasLicense) {
+      sql += `\n-- 15. SaaS License\n`;
+      sql += `INSERT INTO public.saas_licenses (id, license_key, tenant_id, tenant_name, tier, status, issued_to, issued_at, expires_at, grace_period_days, quota, entitlements)
+VALUES (${escapeSql(saasLicense.licenseKey || 'license-primary')}, ${escapeSql(saasLicense.licenseKey || 'primary-key')}, ${escapeSql(saasLicense.tenantId || 'ten-tata-01')}, ${escapeSql(saasLicense.tenantName || 'Enterprise VMS')}, ${escapeSql(saasLicense.tier || 'ENTERPRISE')}, ${escapeSql(saasLicense.status || 'ACTIVE')}, ${escapeSql(saasLicense.issuedTo || 'Admin')}, '${saasLicense.issuedAt || new Date().toISOString()}'::timestamptz, '${saasLicense.expiresAt || new Date(Date.now() + 31536000000).toISOString()}'::timestamptz, ${saasLicense.gracePeriodDays || 14}, ${escapeJson(saasLicense.quota)}, ${escapeJson(saasLicense.entitlements)})
+ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status;\n`;
+    }
+
+    if (whitelabelBranding) {
+      sql += `\n-- 16. Whitelabel Branding\n`;
+      sql += `INSERT INTO public.whitelabel_brandings (id, tenant_id, company_name, portal_title, tagline, primary_color, secondary_color, font_family, header_background, config, updated_at)
+VALUES ('branding-primary', 'ten-tata-01', ${escapeSql(whitelabelBranding.companyName || 'Enterprise VMS')}, ${escapeSql(whitelabelBranding.portalTitle || 'Visitor Access Control')}, ${escapeSql(whitelabelBranding.tagline || '')}, ${escapeSql(whitelabelBranding.primaryColor || '#123B5D')}, ${escapeSql(whitelabelBranding.secondaryColor || '#0284c7')}, ${escapeSql(whitelabelBranding.fontFamily || 'Inter, sans-serif')}, ${escapeSql(whitelabelBranding.headerBackground || 'DARK_NAVY')}, ${escapeJson(whitelabelBranding)}, NOW())
+ON CONFLICT (id) DO UPDATE SET company_name = EXCLUDED.company_name, updated_at = NOW();\n`;
+    }
+
+    if (roleDefinitions.length > 0) {
+      sql += `\n-- 17. Custom Role Definitions\n`;
+      for (const rd of roleDefinitions) {
+        sql += `INSERT INTO public.role_definitions (id, label, description, badge_color, security_tier, is_system_role, permissions)
+VALUES (${escapeSql(rd.id)}, ${escapeSql(rd.label)}, ${escapeSql(rd.description)}, ${escapeSql(rd.badgeColor)}, ${escapeSql(rd.securityTier)}, ${Boolean(rd.isSystemRole)}, ${escapeJson(rd.permissions)})
+ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, permissions = EXCLUDED.permissions;\n`;
+      }
+    }
+
+    if (googleSheetConfig) {
+      sql += `\n-- 18. Google Sheet Config\n`;
+      sql += `INSERT INTO public.google_sheet_configs (id, tenant_id, spreadsheet_id, spreadsheet_url, sheet_name, sync_mode, auto_sync_on_check_in, auto_sync_on_check_out, enabled, last_synced_at, sync_status)
+VALUES ('sheet-config-primary', 'ten-tata-01', ${escapeSql(googleSheetConfig.spreadsheetId || 'default-sheet-id')}, ${escapeSql(googleSheetConfig.spreadsheetUrl || '')}, ${escapeSql(googleSheetConfig.sheetName || 'Visitor_Log_2026')}, ${escapeSql(googleSheetConfig.syncMode || 'REALTIME_CHECKIN')}, ${Boolean(googleSheetConfig.autoSyncOnCheckIn ?? true)}, ${Boolean(googleSheetConfig.autoSyncOnCheckOut ?? true)}, ${Boolean(googleSheetConfig.enabled ?? true)}, ${googleSheetConfig.lastSyncedAt ? `'${googleSheetConfig.lastSyncedAt}'::timestamptz` : 'NULL'}, ${escapeSql(googleSheetConfig.syncStatus || 'CONNECTED')})
+ON CONFLICT (id) DO UPDATE SET sync_status = EXCLUDED.sync_status;\n`;
+    }
+
+    sql += `\n-- 19. Database Audit Logs\n`;
     sql += `INSERT INTO public.database_audit_logs (id, timestamp, action, performed_by, details, status, latency_ms)
-VALUES ('db-log-init', NOW(), 'SCHEMA_AND_DATA_INIT', 'Platform Super Admin', 'Full schema setup and seed execution on db.eonmoodozhicjlgnmzkx.supabase.co.', 'SUCCESS', 12)
+VALUES ('db-log-sync-${Date.now()}', NOW(), 'SCHEMA_AND_LOCAL_DATA_SYNC', 'Platform Super Admin', 'Full schema setup and complete local data sync script executed on db.eonmoodozhicjlgnmzkx.supabase.co.', 'SUCCESS', 14)
 ON CONFLICT (id) DO NOTHING;\n`;
 
-    sql += `\nCOMMIT;\n\n-- Verification Queries\nSELECT 'tenants' as tbl, count(*) FROM public.tenants\nUNION ALL\nSELECT 'sites', count(*) FROM public.sites\nUNION ALL\nSELECT 'app_users', count(*) FROM public.app_users\nUNION ALL\nSELECT 'visitors', count(*) FROM public.visitors\nUNION ALL\nSELECT 'visits', count(*) FROM public.visits;\n`;
+    sql += `\nCOMMIT;\n\n-- Verification Queries\nSELECT 'tenants' as tbl, count(*) FROM public.tenants\nUNION ALL\nSELECT 'sites', count(*) FROM public.sites\nUNION ALL\nSELECT 'app_users', count(*) FROM public.app_users\nUNION ALL\nSELECT 'visitors', count(*) FROM public.visitors\nUNION ALL\nSELECT 'visits', count(*) FROM public.visits\nUNION ALL\nSELECT 'badge_templates', count(*) FROM public.badge_templates;\n`;
 
     return sql;
   }

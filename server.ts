@@ -40,6 +40,30 @@ async function startServer() {
     }
   });
 
+  app.post('/api/database/sync-all-local-data', async (req, res) => {
+    try {
+      const { config, localData } = req.body || {};
+      const result = await DatabaseService.syncAllData(config, localData);
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({
+        success: false,
+        error: err?.message || 'Failed to sync local data to database',
+      });
+    }
+  });
+
+  app.post('/api/database/generate-sql', (req, res) => {
+    try {
+      const { localData } = req.body || {};
+      const sql = DatabaseService.generateFullSqlScript(localData);
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.send(sql);
+    } catch (err: any) {
+      res.status(500).send(`-- Error generating SQL: ${err?.message}`);
+    }
+  });
+
   app.post('/api/database/sync-dummy-data', async (req, res) => {
     try {
       const config = req.body || {};
