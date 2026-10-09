@@ -1,26 +1,18 @@
 @import "tailwindcss";
 
-@theme {
-  --color-white: #FFFFF0;
-  --color-ivory: #FFFFF0;
-  --color-ivory-light: #FFFEF7;
-  --color-ivory-surface: #FFFFF0;
-  --color-ivory-warm: #FAF7EE;
-  --color-ivory-dark: #F3EFE4;
-}
-
 @layer base {
   :root {
     --color-primary: #123B5D;
     --color-secondary: #0F766E;
-    --color-surface: #FFFFF0;
-    --color-background: #FAF7EE;
-    --color-text-primary: #172B3A;
-    --color-text-secondary: #526575;
-    --color-border: #E5DFC5;
+    --color-surface: #FFFFFF;
+    --color-background: #F8FAFC;
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #475569;
+    --color-border: #E2E8F0;
     --color-success: #15803D;
     --color-warning: #B45309;
     --color-danger: #B91C1C;
+    color-scheme: light;
   }
 
   body {
@@ -32,22 +24,343 @@
   }
 }
 
-/* Global Ivory Theme Styling for Cards, Panels, Sidebars & Modals */
-.bg-white {
-  background-color: #FFFFF0 !important;
+/* Crisp Clean Light Mode */
+html:not(.dark) {
+  color-scheme: light;
 }
 
-.bg-\[\#F4F7FA\] {
-  background-color: #FAF7EE !important;
+html:not(.dark) body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
 }
 
-.bg-slate-50,
-.bg-gray-50 {
-  background-color: #FAF7EE !important;
+/* High-Contrast Dark Mode: Clear, Precise, Prominent with Light Blue Menus */
+html.dark, html.theme-dark {
+  --color-surface: #0E294A;
+  --color-background: #081B33;
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #BAE6FD;
+  --color-border: #0284C7;
+  color-scheme: dark;
 }
 
-.bg-\[\#F8FAFC\] {
-  background-color: #F5F1E5 !important;
+html.dark body, html.theme-dark body {
+  background-color: #081B33 !important;
+  color: #F8FAFC !important;
+}
+
+html.dark .bg-white, html.theme-dark .bg-white {
+  background-color: #0E294A !important;
+  color: #F8FAFC;
+  border-color: #0284C7;
+}
+
+html.dark .bg-\[\#F4F7FA\],
+html.dark .bg-slate-50,
+html.dark .bg-gray-50,
+html.dark .bg-\[\#F8FAFC\],
+html.theme-dark .bg-\[\#F4F7FA\],
+html.theme-dark .bg-slate-50,
+html.theme-dark .bg-gray-50,
+html.theme-dark .bg-\[\#F8FAFC\] {
+  background-color: #0A213D !important;
+}
+
+html.dark .text-slate-950,
+html.dark .text-black,
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-\[\#172B3A\],
+html.theme-dark .text-slate-950,
+html.theme-dark .text-black,
+html.theme-dark .text-slate-900,
+html.theme-dark .text-slate-800,
+html.theme-dark .text-gray-900,
+html.theme-dark .text-gray-800,
+html.theme-dark .text-\[\#172B3A\] {
+  color: #F0F9FF !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-\[\#526575\],
+html.theme-dark .text-slate-700,
+html.theme-dark .text-slate-600,
+html.theme-dark .text-gray-700,
+html.theme-dark .text-gray-600,
+html.theme-dark .text-\[\#526575\] {
+  color: #BAE6FD !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400,
+html.theme-dark .text-slate-500,
+html.theme-dark .text-slate-400 {
+  color: #7DD3FC !important;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-100,
+html.dark .border-gray-200,
+html.dark .border-gray-100,
+html.dark .border-\[\#D8E1E8\],
+html.theme-dark .border-slate-200,
+html.theme-dark .border-slate-100,
+html.theme-dark .border-gray-200,
+html.theme-dark .border-gray-100,
+html.theme-dark .border-\[\#D8E1E8\] {
+  border-color: #0284C7 !important;
+}
+
+html.dark .divide-slate-200,
+html.dark .divide-slate-100,
+html.dark .divide-\[\#D8E1E8\],
+html.theme-dark .divide-slate-200,
+html.theme-dark .divide-slate-100,
+html.theme-dark .divide-\[\#D8E1E8\] {
+  border-color: #0284C7 !important;
+}
+
+/* ALL MENUS IN DARK THEME -> LIGHT BLUE PALETTE */
+html.dark header,
+html.theme-dark header,
+html.dark header.sticky,
+html.theme-dark header.sticky {
+  background-color: #0C2B4E !important;
+  border-bottom: 1px solid #0284C7 !important;
+}
+
+html.dark #header-sidebar-burger-btn,
+html.theme-dark #header-sidebar-burger-btn {
+  border-color: #38BDF8 !important;
+  color: #BAE6FD !important;
+}
+
+html.dark aside,
+html.theme-dark aside,
+html.dark #main-navigation-sidebar,
+html.theme-dark #main-navigation-sidebar {
+  background-color: #0C2B4E !important;
+  border-color: #0284C7 !important;
+  color: #BAE6FD !important;
+}
+
+html.dark aside .bg-gradient-to-b,
+html.theme-dark aside .bg-gradient-to-b {
+  background: #103663 !important;
+  border-color: #0284C7 !important;
+}
+
+html.dark aside .text-slate-900,
+html.dark aside .text-slate-950,
+html.theme-dark aside .text-slate-900,
+html.theme-dark aside .text-slate-950 {
+  color: #E0F2FE !important;
+}
+
+html.dark aside .text-slate-700,
+html.dark aside .text-slate-600,
+html.dark aside .text-slate-500,
+html.dark aside .text-slate-400,
+html.theme-dark aside .text-slate-700,
+html.theme-dark aside .text-slate-600,
+html.theme-dark aside .text-slate-500,
+html.theme-dark aside .text-slate-400 {
+  color: #7DD3FC !important;
+}
+
+html.dark aside .bg-slate-50\/80,
+html.theme-dark aside .bg-slate-50\/80 {
+  background-color: #123E6F !important;
+  border-color: #0369A1 !important;
+}
+
+html.dark aside .bg-slate-50\/90,
+html.theme-dark aside .bg-slate-50\/90 {
+  background-color: #0A2442 !important;
+  border-color: #0284C7 !important;
+}
+
+html.dark aside .bg-slate-100,
+html.theme-dark aside .bg-slate-100 {
+  background-color: #174B85 !important;
+  color: #38BDF8 !important;
+  border-color: #0284C7 !important;
+}
+
+html.dark aside button:hover,
+html.theme-dark aside button:hover {
+  background-color: #174B85 !important;
+  color: #F0F9FF !important;
+}
+
+html.dark aside .border-slate-100,
+html.dark aside .border-slate-200,
+html.theme-dark aside .border-slate-100,
+html.theme-dark aside .border-slate-200 {
+  border-color: #0369A1 !important;
+}
+
+/* All Dropdown Menus in Dark Theme -> Light Blue */
+html.dark [id*="dropdown"],
+html.theme-dark [id*="dropdown"],
+html.dark .dropdown-menu,
+html.theme-dark .dropdown-menu {
+  background-color: #0C2B4E !important;
+  border-color: #38BDF8 !important;
+  color: #E0F2FE !important;
+  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.35) !important;
+}
+
+html.dark [id*="dropdown"] button,
+html.theme-dark [id*="dropdown"] button {
+  color: #BAE6FD !important;
+}
+
+html.dark [id*="dropdown"] button:hover,
+html.theme-dark [id*="dropdown"] button:hover {
+  background-color: #174B85 !important;
+  color: #FFFFFF !important;
+}
+
+/* Sub-Tab Navigation Menus in Dark Theme -> Light Blue */
+html.dark .rounded-2xl.border.border-slate-200.p-2,
+html.theme-dark .rounded-2xl.border.border-slate-200.p-2 {
+  background-color: #0C2B4E !important;
+  border-color: #0284C7 !important;
+}
+
+html.dark .rounded-2xl.border.border-slate-200.p-2 button,
+html.theme-dark .rounded-2xl.border.border-slate-200.p-2 button {
+  color: #7DD3FC !important;
+}
+
+html.dark .rounded-2xl.border.border-slate-200.p-2 button:hover,
+html.theme-dark .rounded-2xl.border.border-slate-200.p-2 button:hover {
+  background-color: #174B85 !important;
+  color: #FFFFFF !important;
+}
+
+/* Any Action Menus, Context Menus, Select Menus, and Tablists in Dark Theme -> Light Blue */
+html.dark select,
+html.theme-dark select,
+html.dark [role="menu"],
+html.theme-dark [role="menu"],
+html.dark [role="tablist"],
+html.theme-dark [role="tablist"] {
+  background-color: #0C2B4E !important;
+  border-color: #0284C7 !important;
+  color: #BAE6FD !important;
+}
+
+html.dark select option,
+html.theme-dark select option {
+  background-color: #0C2B4E !important;
+  color: #E0F2FE !important;
+}
+
+/* High-Contrast Crisp Selection Rules */
+::selection {
+  background-color: #0284C7;
+  color: #FFFFFF;
+}
+
+html.dark ::selection,
+html.theme-dark ::selection {
+  background-color: #38BDF8 !important;
+  color: #081B33 !important;
+}
+
+/* Dark Mode: Prevent all light/white hover blowout across entire app */
+html.dark .hover\:bg-white:hover,
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover,
+html.dark .hover\:bg-slate-200:hover,
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-\[\#F4F7FA\]:hover,
+html.dark .hover\:bg-\[\#F8FAFC\]:hover,
+html.theme-dark .hover\:bg-white:hover,
+html.theme-dark .hover\:bg-slate-50:hover,
+html.theme-dark .hover\:bg-slate-100:hover,
+html.theme-dark .hover\:bg-slate-200:hover,
+html.theme-dark .hover\:bg-gray-50:hover,
+html.theme-dark .hover\:bg-gray-100:hover,
+html.theme-dark .hover\:bg-\[\#F4F7FA\]:hover,
+html.theme-dark .hover\:bg-\[\#F8FAFC\]:hover {
+  background-color: #174E8A !important;
+  color: #FFFFFF !important;
+}
+
+/* Dark Mode Table Row Hover & Selection */
+html.dark tbody tr:hover,
+html.dark tr.hover\:bg-\[\#F4F7FA\]:hover,
+html.dark tr.hover\:bg-slate-50:hover,
+html.dark tr.hover\:bg-slate-100:hover,
+html.theme-dark tbody tr:hover,
+html.theme-dark tr.hover\:bg-\[\#F4F7FA\]:hover,
+html.theme-dark tr.hover\:bg-slate-50:hover,
+html.theme-dark tr.hover\:bg-slate-100:hover {
+  background-color: #123863 !important;
+  color: #F8FAFC !important;
+}
+
+html.dark tbody tr:hover td,
+html.dark tbody tr:hover span,
+html.dark tbody tr:hover div,
+html.theme-dark tbody tr:hover td,
+html.theme-dark tbody tr:hover span,
+html.theme-dark tbody tr:hover div {
+  color: #F8FAFC !important;
+}
+
+/* Dark Mode Option & Select Hover / Selection */
+html.dark select option:hover,
+html.dark select option:focus,
+html.dark select option:checked,
+html.theme-dark select option:hover,
+html.theme-dark select option:focus,
+html.theme-dark select option:checked {
+  background-color: #0284C7 !important;
+  color: #FFFFFF !important;
+}
+
+/* Selection and Hover Color Consistency in Dark Mode */
+html.dark [aria-selected="true"],
+html.dark [data-selected="true"],
+html.dark .selected,
+html.theme-dark [aria-selected="true"],
+html.theme-dark [data-selected="true"],
+html.theme-dark .selected {
+  background-color: #164E87 !important;
+  color: #FFFFFF !important;
+}
+
+html.dark [aria-selected="true"]:hover,
+html.dark [data-selected="true"]:hover,
+html.dark .selected:hover,
+html.theme-dark [aria-selected="true"]:hover,
+html.theme-dark [data-selected="true"]:hover,
+html.theme-dark .selected:hover {
+  background-color: #1D5C9E !important;
+  color: #FFFFFF !important;
+}
+
+/* Modal and card elevation in dark mode */
+html.dark .shadow-xs,
+html.dark .shadow-2xs,
+html.dark .shadow-sm,
+html.dark .shadow-md {
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25) !important;
+}
+
+html.dark .fixed.inset-0.bg-black\/50,
+html.theme-dark .fixed.inset-0.bg-black\/50 {
+  background-color: rgba(6, 21, 38, 0.85) !important;
 }
 
 /* Custom badge print media styles */
@@ -63,6 +376,6 @@
     left: 0;
     top: 0;
     width: 100%;
-    background-color: #FFFFF0 !important;
+    background-color: #FFFFFF !important;
   }
 }

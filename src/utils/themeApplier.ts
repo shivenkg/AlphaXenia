@@ -259,57 +259,151 @@ export function ensureGoogleFontsLoaded(): void {
   }
 }
 
+export type GlobalThemeMode = 'light' | 'dark' | 'ivory';
+
+export const THEME_MODE_STORAGE_KEY = 'vms_theme_mode';
+
+export const getGlobalThemeMode = (): 'light' | 'dark' => {
+  if (typeof window === 'undefined') return 'light';
+  try {
+    const saved = localStorage.getItem(THEME_MODE_STORAGE_KEY);
+    if (saved === 'dark') {
+      return 'dark';
+    }
+    if (saved === 'light' || saved === 'ivory') {
+      return 'light';
+    }
+  } catch {
+    // fallback
+  }
+  return 'light';
+};
+
+export const setGlobalThemeMode = (mode: 'light' | 'dark' | 'ivory', branding?: WhitelabelBranding): void => {
+  const normalizedMode: 'light' | 'dark' = mode === 'dark' ? 'dark' : 'light';
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(THEME_MODE_STORAGE_KEY, normalizedMode);
+    } catch {
+      // ignore
+    }
+    window.dispatchEvent(new CustomEvent('vms-theme-changed', { detail: { mode: normalizedMode } }));
+  }
+  applyPortalTheme(branding, normalizedMode);
+};
+
+export const toggleGlobalThemeMode = (branding?: WhitelabelBranding): 'light' | 'dark' => {
+  const current = getGlobalThemeMode();
+  const next: 'light' | 'dark' = current === 'dark' ? 'light' : 'dark';
+  setGlobalThemeMode(next, branding);
+  return next;
+};
+
 /**
  * Dynamically applies branding theme (font, font style, font color, background, forecolor)
  * to root element and injects high-priority CSS overrides.
  */
-export function applyPortalTheme(branding: WhitelabelBranding): void {
+export function applyPortalTheme(branding?: WhitelabelBranding, modeOverride?: GlobalThemeMode): void {
   if (typeof document === 'undefined') return;
 
   ensureGoogleFontsLoaded();
 
+  const currentMode = modeOverride || getGlobalThemeMode();
+  const isDark = currentMode === 'dark';
+
+  const safeBranding = branding || ({
+    enabled: false,
+    companyName: 'JS AlphaSoftXenia',
+    portalTitle: 'JS AlphaSoftXenia Enterprise VMS',
+    tagline: 'Multi-Tenant Security Portal',
+    primaryColor: '#123B5D',
+    headerBackground: 'DARK_NAVY',
+  } as WhitelabelBranding);
+
   // Find font stack
   const selectedFontObj = SUPPORTED_FONTS.find(
-    (f) => f.name.toLowerCase() === (branding.fontFamily || 'Plus Jakarta Sans').toLowerCase()
+    (f) => f.name.toLowerCase() === (safeBranding.fontFamily || 'Plus Jakarta Sans').toLowerCase()
   );
   const fontStack = selectedFontObj
     ? selectedFontObj.stack
-    : `'${branding.fontFamily || 'Plus Jakarta Sans'}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+    : `'${safeBranding.fontFamily || 'Plus Jakarta Sans'}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
 
-  const fontStyle = branding.fontStyle || 'normal';
-  const fontWeight = branding.fontWeight || '500';
-  const fontSizeBase = branding.fontSizeBase || '14px';
+  const fontStyle = safeBranding.fontStyle || 'normal';
+  const fontWeight = safeBranding.fontWeight || '500';
+  const fontSizeBase = safeBranding.fontSizeBase || '14px';
   const letterSpacing =
-    branding.letterSpacing === 'tight'
+    safeBranding.letterSpacing === 'tight'
       ? '-0.025em'
-      : branding.letterSpacing === 'wide'
+      : safeBranding.letterSpacing === 'wide'
       ? '0.025em'
-      : branding.letterSpacing === 'wider'
+      : safeBranding.letterSpacing === 'wider'
       ? '0.05em'
       : 'normal';
-  const textTransform = branding.textTransform || 'none';
+  const textTransform = safeBranding.textTransform || 'none';
 
-  // Colors
-  const fontColor = branding.fontColor || '#172B3A';
-  const headingColor = branding.headingColor || '#0F172A';
-  const mutedFontColor = branding.mutedFontColor || '#526575';
-  const backgroundColor = branding.backgroundColor || '#FAF7EE';
-  const surfaceColor = branding.surfaceColor || '#FFFFF0';
-  const foreColor = branding.foreColor || branding.primaryColor || '#123B5D';
-  const foreColorText = branding.foreColorText || getContrastTextColor(foreColor);
-  const secondaryForeColor = branding.secondaryForeColor || branding.secondaryColor || '#0F766E';
+  // Colors based on Clean Light vs High-Contrast Dark mode
+  let fontColor: string;
+  let headingColor: string;
+  let mutedFontColor: string;
+  let backgroundColor: string;
+  let surfaceColor: string;
+  let foreColor: string;
+  let foreColorText: string;
+  let secondaryForeColor: string;
+  let headerBg: string;
 
-  let headerBg = '#123B5D';
-  if (branding.headerBackground === 'DARK_NAVY') headerBg = '#123B5D';
-  else if (branding.headerBackground === 'SLATE') headerBg = '#0F172A';
-  else if (branding.headerBackground === 'BRAND_COLOR') headerBg = foreColor;
-  else if (branding.headerBackground === 'CLEAN_WHITE') headerBg = '#FFFFFF';
-  else if (branding.headerBackground === 'CUSTOM_HEX' && branding.headerBackgroundColor) {
-    headerBg = branding.headerBackgroundColor;
+  if (isDark) {
+    // High-Contrast Dark Mode: Clear, Precise, and Prominent
+    fontColor = '#F8FAFC';
+    headingColor = '#FFFFFF';
+    mutedFontColor = '#94A3B8';
+    backgroundColor = '#0A111E';
+    surfaceColor = '#131E31';
+    foreColor = '#38BDF8';
+    foreColorText = '#0A111E';
+    secondaryForeColor = '#2DD4BF';
+    headerBg = '#0C2B4E';
+  } else {
+    // Clean, High-Contrast Light Mode: Clear, Precise, and Prominent
+    fontColor = safeBranding.fontColor || '#0F172A';
+    headingColor = safeBranding.headingColor || '#0F172A';
+    mutedFontColor = safeBranding.mutedFontColor || '#475569';
+    backgroundColor = safeBranding.backgroundColor || '#F8FAFC';
+    surfaceColor = safeBranding.surfaceColor || '#FFFFFF';
+    foreColor = safeBranding.foreColor || safeBranding.primaryColor || '#123B5D';
+    foreColorText = safeBranding.foreColorText || '#FFFFFF';
+    secondaryForeColor = safeBranding.secondaryForeColor || safeBranding.secondaryColor || '#0F766E';
+
+    headerBg = '#123B5D';
+    if (safeBranding.headerBackground === 'DARK_NAVY') headerBg = '#123B5D';
+    else if (safeBranding.headerBackground === 'SLATE') headerBg = '#0F172A';
+    else if (safeBranding.headerBackground === 'BRAND_COLOR') headerBg = foreColor;
+    else if (safeBranding.headerBackground === 'CLEAN_WHITE') headerBg = '#FFFFFF';
+    else if (safeBranding.headerBackground === 'CUSTOM_HEX' && safeBranding.headerBackgroundColor) {
+      headerBg = safeBranding.headerBackgroundColor;
+    }
   }
 
   // Set CSS Custom Properties on documentElement
   const root = document.documentElement;
+  if (isDark) {
+    root.classList.add('dark');
+    root.classList.add('theme-dark');
+    root.classList.remove('theme-light', 'theme-ivory');
+    document.body.classList.add('dark');
+    document.body.classList.add('theme-dark');
+    document.body.classList.remove('theme-light', 'theme-ivory');
+  } else {
+    root.classList.remove('dark');
+    root.classList.remove('theme-dark');
+    root.classList.add('theme-light');
+    root.classList.remove('theme-ivory');
+    document.body.classList.remove('dark');
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('theme-light');
+    document.body.classList.remove('theme-ivory');
+  }
+
   root.style.setProperty('--vms-font-family', fontStack);
   root.style.setProperty('--vms-font-style', fontStyle);
   root.style.setProperty('--vms-font-weight', fontWeight);
@@ -329,7 +423,7 @@ export function applyPortalTheme(branding: WhitelabelBranding): void {
   root.style.setProperty('--vms-forecolor-text', foreColorText);
   root.style.setProperty('--vms-secondary-forecolor', secondaryForeColor);
 
-  // Sync with Tailwind CSS variables in index.css
+  // Sync with Tailwind CSS variables
   root.style.setProperty('--color-primary', foreColor);
   root.style.setProperty('--color-secondary', secondaryForeColor);
   root.style.setProperty('--color-surface', surfaceColor);
@@ -347,7 +441,7 @@ export function applyPortalTheme(branding: WhitelabelBranding): void {
   }
 
   styleEl.innerHTML = `
-    /* Enterprise Super Admin Theme Overrides */
+    /* Enterprise Theme Overrides (${isDark ? 'HIGH CONTRAST DARK MODE' : 'CLEAN ENTERPRISE LIGHT MODE'}) */
     body {
       font-family: var(--vms-font-family) !important;
       font-style: var(--vms-font-style) !important;
@@ -365,42 +459,129 @@ export function applyPortalTheme(branding: WhitelabelBranding): void {
       text-transform: ${textTransform === 'uppercase' ? 'uppercase' : 'inherit'};
     }
 
-    /* Global dynamic card, panel, and modal backgrounds */
-    .bg-white {
-      background-color: var(--vms-surface-color) !important;
-    }
-
-    .bg-\\[\\#F4F7FA\\],
-    .bg-slate-50,
-    .bg-gray-50 {
-      background-color: var(--vms-bg-color) !important;
-    }
-
-    /* Header navbar background dynamically adapts to theme */
     header.sticky {
       background-color: var(--vms-header-bg) !important;
     }
 
-    /* Forecolor dynamic accents on primary buttons and badges */
-    .bg-\\[\\#123B5D\\] {
-      background-color: var(--vms-forecolor) !important;
-      color: var(--vms-forecolor-text) !important;
-    }
-
-    .text-\\[\\#123B5D\\] {
-      color: var(--vms-forecolor) !important;
-    }
-
-    .border-\\[\\#123B5D\\] {
-      border-color: var(--vms-forecolor) !important;
-    }
-
-    .text-\\[\\#172B3A\\] {
-      color: var(--vms-font-color) !important;
-    }
-
-    .text-\\[\\#526575\\] {
-      color: var(--vms-muted-color) !important;
-    }
+    ${isDark ? `
+      /* High Contrast Dark Mode Refinements: Clear, Precise, Prominent with Light Blue Menus */
+      .bg-white {
+        background-color: #0E294A !important;
+        color: #F8FAFC !important;
+        border-color: #0284C7 !important;
+      }
+      .bg-\\[\\#F4F7FA\\],
+      .bg-slate-50,
+      .bg-gray-50,
+      .bg-\\[\\#F8FAFC\\] {
+        background-color: #0A213D !important;
+      }
+      .bg-slate-100, .bg-gray-100 {
+        background-color: #123C6A !important;
+      }
+      .text-[#172B3A], .text-slate-950, .text-black, .text-slate-900, .text-slate-800, .text-gray-900, .text-gray-800 {
+        color: #F8FAFC !important;
+      }
+      .text-[#526575], .text-slate-700, .text-slate-600, .text-gray-700, .text-gray-600 {
+        color: #BAE6FD !important;
+      }
+      .text-slate-500, .text-slate-400, .text-gray-500 {
+        color: #7DD3FC !important;
+      }
+      .border-[#D8E1E8], .border-slate-200, .border-slate-100, .border-gray-200, .border-gray-100 {
+        border-color: #0284C7 !important;
+      }
+      .divide-[#D8E1E8], .divide-slate-200 {
+        border-color: #0284C7 !important;
+      }
+      /* ALL MENUS IN DARK THEME -> LIGHT BLUE PALETTE */
+      aside, #main-navigation-sidebar {
+        background-color: #0B2544 !important;
+        border-color: #0284C7 !important;
+        color: #BAE6FD !important;
+      }
+      aside button, [id*="dropdown"] button, [role="menu"] button {
+        color: #BAE6FD !important;
+      }
+      aside button:hover, [id*="dropdown"] button:hover, [role="menu"] button:hover {
+        background-color: #174E8A !important;
+        color: #FFFFFF !important;
+      }
+      header.sticky {
+        background-color: #0C2B4E !important;
+        border-bottom: 1px solid #0284C7 !important;
+      }
+      [id*="dropdown"], .dropdown-menu, [role="menu"] {
+        background-color: #0B2544 !important;
+        border-color: #38BDF8 !important;
+        color: #BAE6FD !important;
+        box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.4) !important;
+      }
+      input[type="text"], input[type="search"], input[type="email"], input[type="password"], select, textarea {
+        background-color: #0E294A !important;
+        color: #FFFFFF !important;
+        border-color: #0284C7 !important;
+      }
+      input[type="text"]:focus, input[type="search"]:focus, input[type="email"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+        border-color: #38BDF8 !important;
+        outline: none !important;
+      }
+      .bg-slate-200 {
+        background-color: #123C6A !important;
+      }
+      /* Prevent white blowout on hover/selection in dark mode */
+      .hover\:bg-white:hover,
+      .hover\:bg-slate-50:hover,
+      .hover\:bg-slate-100:hover,
+      .hover\:bg-slate-200:hover,
+      .hover\:bg-gray-50:hover,
+      .hover\:bg-gray-100:hover,
+      .hover\:bg-\[\#F4F7FA\]:hover,
+      .hover\:bg-\[\#F8FAFC\]:hover {
+        background-color: #174E8A !important;
+        color: #FFFFFF !important;
+      }
+      tbody tr:hover, tr.hover\:bg-\[\#F4F7FA\]:hover, tr.hover\:bg-slate-50:hover, tr.hover\:bg-slate-100:hover {
+        background-color: #123863 !important;
+        color: #F8FAFC !important;
+      }
+      select option:hover, select option:focus, select option:checked {
+        background-color: #0284C7 !important;
+        color: #FFFFFF !important;
+      }
+      ::selection {
+        background-color: #38BDF8 !important;
+        color: #081B33 !important;
+      }
+      [aria-selected="true"], [data-selected="true"], .selected {
+        background-color: #164E87 !important;
+        color: #FFFFFF !important;
+      }
+      [aria-selected="true"]:hover, [data-selected="true"]:hover, .selected:hover {
+        background-color: #1D5C9E !important;
+        color: #FFFFFF !important;
+      }
+    ` : `
+      /* Clean Light Mode Refinements: Clear, Precise, Prominent */
+      .bg-white {
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+      }
+      .bg-\\[\\#F4F7FA\\],
+      .bg-slate-50,
+      .bg-gray-50,
+      .bg-\\[\\#F8FAFC\\] {
+        background-color: #F8FAFC !important;
+      }
+      .text-[#172B3A] {
+        color: #0F172A !important;
+      }
+      .text-[#526575] {
+        color: #475569 !important;
+      }
+      .border-[#D8E1E8] {
+        border-color: #E2E8F0 !important;
+      }
+    `}
   `;
 }

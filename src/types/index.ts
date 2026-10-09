@@ -4,6 +4,8 @@
  */
 
 export type NavViewId =
+  | 'landing'
+  | 'login'
   | 'dashboard'
   | 'reception'
   | 'walkin'
@@ -29,7 +31,8 @@ export type NavViewId =
   | 'tenant_provisioning'
   | 'saas_license'
   | 'whitelabel'
-  | 'roles_workflow';
+  | 'roles_workflow'
+  | 'database_config';
 
 export interface WhitelabelBranding {
   enabled: boolean;
@@ -548,3 +551,54 @@ export interface GoogleSheetConfig {
     securityClearance: boolean;
   };
 }
+
+export type DatabaseEngine = 'POSTGRESQL' | 'MYSQL' | 'ORACLE' | 'MSSQL' | 'CLOUDSQL' | 'COCKROACHDB' | 'MONGODB';
+
+export type MultiTenantStrategy = 'SHARED_DATABASE_DISCRIMINATOR' | 'SCHEMA_PER_TENANT' | 'DATABASE_PER_TENANT';
+
+export interface DatabaseConnectionConfig {
+  engine: DatabaseEngine;
+  host: string;
+  port: number;
+  databaseName: string;
+  username: string;
+  password: string;
+  sslMode: 'disable' | 'require' | 'verify-ca' | 'verify-full';
+  clientCertName?: string;
+  multiTenantStrategy: MultiTenantStrategy;
+  connectionPooling: {
+    minPoolSize: number;
+    maxPoolSize: number;
+    idleTimeoutMs: number;
+    connectionTimeoutMs: number;
+  };
+  readReplica: {
+    enabled: boolean;
+    replicaHost: string;
+    replicaPort: number;
+    readWriteSplit: boolean;
+  };
+  backupSchedule: {
+    enabled: boolean;
+    dailySnapshotUtc: string;
+    retentionDays: number;
+    walArchiving: boolean;
+  };
+  status: 'CONNECTED' | 'DISCONNECTED' | 'TESTING' | 'ERROR';
+  lastTestedAt?: string;
+  latencyMs?: number;
+  serverVersion?: string;
+  activeConnections?: number;
+  lastError?: string;
+}
+
+export interface DatabaseAuditLog {
+  id: string;
+  timestamp: string;
+  action: string;
+  user: string;
+  details: string;
+  status: 'SUCCESS' | 'WARNING' | 'FAILED';
+  latencyMs?: number;
+}
+

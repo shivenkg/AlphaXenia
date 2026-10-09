@@ -8,6 +8,7 @@ import { LoginView } from './components/auth/LoginView';
 import { AdminManagementView } from './components/admin/AdminManagementView';
 import { SaaSLicenseEngineView } from './components/admin/SaaSLicenseEngineView';
 import { CompanyLogoWhitelabelView } from './components/admin/CompanyLogoWhitelabelView';
+import { DatabaseConnectionConfigView } from './components/admin/DatabaseConnectionConfigView';
 import { SharePreRegistrationModal } from './components/common/SharePreRegistrationModal';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { DashboardView } from './components/dashboard/DashboardView';
@@ -23,6 +24,7 @@ import { AnalyticsView } from './components/analytics/AnalyticsView';
 import { ArchitectureDocsView } from './components/docs/ArchitectureDocsView';
 import { EmergencyRollCallView } from './components/emergency/EmergencyRollCallView';
 import { PublicPreRegistrationView } from './components/public/PublicPreRegistrationView';
+import { ProductLandingView } from './components/public/ProductLandingView';
 import { UserProfileModal } from './components/profile/UserProfileModal';
 import { ExpressMobileCheckoutModal } from './components/badges/ExpressMobileCheckoutModal';
 import { EmergencyRollCallModal } from './components/emergency/EmergencyRollCallModal';
@@ -59,20 +61,7 @@ export const getAutoRenderViewForRole = (role: UserRole): NavViewId => {
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const hasAuth = storageService.isAuthenticated();
-    if (!hasAuth) {
-      // Auto-render authorized session with Super Admin to open full administration center hub
-      const users = storageService.getState().users;
-      const defaultUser =
-        users.find((u) => u.role === 'PLATFORM_SUPER_ADMIN') ||
-        users.find((u) => u.loginId === 'ananya') ||
-        users[0];
-      if (defaultUser) {
-        storageService.setActiveContext({ userId: defaultUser.id });
-        return true;
-      }
-    }
-    return hasAuth;
+    return storageService.isAuthenticated();
   });
 
   const [currentView, setCurrentView] = useState<NavViewId>(() => {
@@ -81,9 +70,19 @@ export default function App() {
       if (params.get('view') === 'pre-register' || window.location.hash.includes('pre-register')) {
         return 'pre_register';
       }
+      if (params.get('view') === 'login' || window.location.hash.includes('login')) {
+        return 'login';
+      }
+      if (params.get('view') === 'landing' || window.location.hash.includes('landing')) {
+        return 'landing';
+      }
+    }
+    const hasAuth = storageService.isAuthenticated();
+    if (!hasAuth) {
+      return 'landing';
     }
     const active = storageService.getActiveUser();
-    const role = active?.role || 'PLATFORM_SUPER_ADMIN';
+    const role = active?.role || 'RECEPTIONIST';
     return isSuperAdminRole(role) ? 'user_management' : getAutoRenderViewForRole(role);
   });
 
@@ -213,11 +212,13 @@ export default function App() {
       currentView === 'user_management' ||
       currentView === 'tenants' ||
       currentView === 'customization' ||
-      currentView === 'admin_hub';
+      currentView === 'admin_hub' ||
+      currentView === 'database_config';
     const canAccessAdmin =
       isSuperAdmin ||
-      activeRole === 'TENANT_ADMIN' ||
-      storageService.hasFunctionAccess(activeUser?.id || '', currentView);
+      (currentView !== 'database_config' &&
+        (activeRole === 'TENANT_ADMIN' ||
+          storageService.hasFunctionAccess(activeUser?.id || '', currentView)));
     if (isAdminView && !canAccessAdmin) {
       setCurrentView(getAutoRenderViewForRole(activeRole));
     }
@@ -237,6 +238,7 @@ export default function App() {
   const handleLogout = useCallback(() => {
     storageService.logout();
     setIsAuthenticated(false);
+    setCurrentView('landing');
   }, []);
 
   // Hook to monitor user inactivity and automatically trigger handleLogout after 30 minutes of idle time
@@ -288,27 +290,67 @@ export default function App() {
         <Header
           onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
           onNavigateToDashboard={() => setCurrentView('dashboard')}
+          onNavigateToLanding={() => setCurrentView('landing')}
         />
         <div className="flex-1 overflow-y-auto">
           <PublicPreRegistrationView
             onNavigateToApprovals={() => {
               if (isAuthenticated) setCurrentView('approvals');
-              else setCurrentView('dashboard');
+              else setCurrentView('landing');
             }}
-            onNavigateToDashboard={() => setCurrentView('dashboard')}
+            onNavigateToDashboard={() => {
+              if (isAuthenticated) setCurrentView('dashboard');
+              else setCurrentView('landing');
+            }}
           />
         </div>
       </div>
     );
   }
 
-  // If not logged in, render the dedicated Login Screen
+  // If not logged in, render either Product Landing View or Login View
   if (!isAuthenticated) {
+    if (currentView === 'login') {
+      return (
+        <LoginView
+          onLoginSuccess={handleLoginSuccess}
+          onNavigateToPublicPreRegister={() => setCurrentView('pre_register')}
+          onNavigateToLanding={() => setCurrentView('landing')}
+        />
+      );
+    }
+
+    // Default view when unauthenticated: Product Landing Page
     return (
-      <LoginView
-        onLoginSuccess={handleLoginSuccess}
+      <ProductLandingView
+        onNavigateToLogin={() => setCurrentView('login')}
         onNavigateToPublicPreRegister={() => setCurrentView('pre_register')}
       />
+    );
+  }
+
+  // If authenticated and explicitly chose to view product landing page
+  if (currentView === 'landing') {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="bg-[#0F2942] text-teal-200 text-xs py-2 px-4 flex items-center justify-between border-b border-white/10 z-50">
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Signed in as <strong>{activeUser.name}</strong> ({storageService.getRoleLabel(activeRole)})</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setCurrentView(isSuperAdmin ? 'user_management' : getAutoRenderViewForRole(activeRole))}
+            className="px-3 py-1 rounded-lg bg-teal-500 hover:bg-teal-400 text-[#0A1927] font-bold text-xs transition cursor-pointer"
+          >
+            ← Return to Workspace
+          </button>
+        </div>
+        <ProductLandingView
+          onNavigateToLogin={() => setCurrentView(isSuperAdmin ? 'user_management' : getAutoRenderViewForRole(activeRole))}
+          onNavigateToPublicPreRegister={() => setCurrentView('pre_register')}
+        />
+      </div>
     );
   }
 
@@ -318,6 +360,12 @@ export default function App() {
       <Header
         onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
         onNavigateToDashboard={() => setCurrentView('dashboard')}
+        onNavigateToView={(view) => setCurrentView(view)}
+        onNavigateToLanding={() => setCurrentView('landing')}
+        onSelectVisitForBadge={(v) => {
+          setSelectedVisitForBadge(v);
+          setCurrentView('badges');
+        }}
         isSidebarOpen={isSidebarOpen}
         isSidebarPinned={isSidebarPinned}
         onToggleSidebar={() => {
@@ -613,6 +661,10 @@ export default function App() {
             />
           )}
 
+          {isSuperAdmin && currentView === 'database_config' && (
+            <DatabaseConnectionConfigView />
+          )}
+
           {!isSuperAdmin && activeRole !== 'TENANT_ADMIN' &&
             (currentView === 'user_management' ||
               currentView === 'tenants' ||
@@ -620,7 +672,8 @@ export default function App() {
               currentView === 'admin_hub' ||
               currentView === 'saas_license' ||
               currentView === 'whitelabel' ||
-              currentView === 'roles_workflow') && (
+              currentView === 'roles_workflow' ||
+              currentView === 'database_config') && (
               <div className="bg-white rounded-2xl border border-amber-200 p-8 text-center max-w-lg mx-auto shadow-sm my-12">
                 <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-700">
                   <ShieldAlert className="w-6 h-6" />

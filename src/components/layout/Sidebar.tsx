@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   ScanLine,
@@ -27,10 +27,12 @@ import {
   LogOut,
   Palette,
   Compass,
-  ChevronDown
+  ChevronDown,
+  Database
 } from 'lucide-react';
 import { storageService } from '../../services/storageService';
 import { NavViewId, UserRole } from '../../types';
+import { getGlobalThemeMode } from '../../utils/themeApplier';
 
 interface SidebarProps {
   currentView: NavViewId;
@@ -61,16 +63,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const activeUser = storageService.getActiveUser();
   const role: UserRole = activeUser?.role || 'RECEPTIONIST';
 
-  const pendingApprovalsCount = state.visits.filter((v) => v.state === 'PENDING_APPROVAL').length;
-  const currentlyInsideCount = state.visits.filter((v) => v.state === 'CHECKED_IN').length;
-  const pendingEdgeSyncCount = state.edgeSyncEvents.filter((e) => e.status === 'PENDING_UPLOAD').length;
-
   const isSuperAdmin = role === 'PLATFORM_SUPER_ADMIN';
   const isReceptionist = role === 'RECEPTIONIST';
 
   // Hover & Manual toggle state for collapsible Function menus
   const [hoveredSectionIdx, setHoveredSectionIdx] = useState<number | null>(null);
   const [toggledSections, setToggledSections] = useState<Record<number, boolean>>({});
+
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => getGlobalThemeMode());
+
+  useEffect(() => {
+    const handleThemeChange = (e: any) => {
+      if (e?.detail?.mode) {
+        setThemeMode(e.detail.mode);
+      } else {
+        setThemeMode(getGlobalThemeMode());
+      }
+    };
+    window.addEventListener('vms-theme-changed', handleThemeChange);
+    return () => window.removeEventListener('vms-theme-changed', handleThemeChange);
+  }, []);
+
+  const isDark = themeMode === 'dark';
 
   const canAccessItem = (itemId: string): boolean => {
     if (isSuperAdmin) return true;
@@ -86,8 +100,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: NavViewId | 'share_modal_action' | 'alerts_config' | 'logout_action';
       label: string;
       icon: any;
-      badge?: string;
-      badgeColor?: string;
       isAction?: boolean;
       onClickAction?: () => void;
       variant?: 'default' | 'danger';
@@ -97,55 +109,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // ==========================================
   // Section 1: Administration & Tenants (Super Admin) or Administration & Physical Sites (Tenant Admin)
   // ==========================================
-  const activeTenantSites = state.sites.filter((s) => s.tenantId === state.activeTenantId);
-  const activeTenantGates = state.gates.filter((g) =>
-    activeTenantSites.map((s) => s.id).includes(g.siteId)
-  );
-  const activeTenantUsers = state.users.filter((u) => u.tenantId === state.activeTenantId);
-
   const rawAdminItems = [
     {
       id: 'user_management' as NavViewId,
       label: 'User Login IDs & Access',
       icon: Users,
-      badge: isSuperAdmin ? `${state.users.length} Users` : `${activeTenantUsers.length} Users`,
-      badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
     },
     {
       id: 'roles_workflow' as NavViewId,
       label: 'Roles & Role Names (RBAC)',
       icon: ShieldCheck,
-      badge: `${storageService.getAllRoleDefinitions().length} Roles`,
-      badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
     },
     {
       id: 'whitelabel' as NavViewId,
       label: isSuperAdmin ? 'Tenant White-Labeling Engine' : 'Tenant White-Labeling',
       icon: Palette,
-      badge: `${storageService.getWhitelabelBranding().fontFamily || 'Fonts'} • ${storageService.getWhitelabelBranding().enabled ? 'Whitelabel' : 'Theme'}`,
-      badgeColor: 'bg-teal-100 text-teal-800 border-teal-300 font-bold',
     },
     {
       id: 'saas_license' as NavViewId,
       label: 'SaaS License Engine',
       icon: KeyRound,
-      badge: 'Enterprise Pro',
-      badgeColor: 'bg-amber-100 text-amber-900 border-amber-300 font-bold',
     },
     {
       id: 'tenants' as NavViewId,
       label: isSuperAdmin ? 'Tenant Addition & Hierarchy' : 'Physical Locations & Entry Gates',
       icon: isSuperAdmin ? Building : DoorOpen,
-      badge: isSuperAdmin ? `${state.tenants.length} Tenants` : `${activeTenantGates.length} Entry Gates`,
-      badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
     },
     {
       id: 'customization' as NavViewId,
       label: 'System & Theme Customization',
       icon: Sliders,
-      badge: 'Typography & Colors',
-      badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200 font-medium',
     },
+    ...(isSuperAdmin ? [
+      {
+        id: 'database_config' as NavViewId,
+        label: 'Database Connection Engine',
+        icon: Database,
+      },
+    ] : []),
   ].filter((item) => (isSuperAdmin ? true : canAccessItem(item.id)));
 
   // Administration Menu Items: includes navigation items plus Alert Configuration and Logout Button
@@ -153,8 +154,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     id: NavViewId | 'share_modal_action' | 'alerts_config' | 'logout_action';
     label: string;
     icon: any;
-    badge?: string;
-    badgeColor?: string;
     isAction?: boolean;
     onClickAction?: () => void;
     variant?: 'default' | 'danger';
@@ -166,8 +165,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'alerts_config',
       label: 'Alert Configuration',
       icon: Bell,
-      badge: 'SMS & Email',
-      badgeColor: 'bg-teal-100 text-teal-800 border-teal-300 font-bold',
       isAction: true,
       onClickAction: onOpenProfileModal,
     });
@@ -195,8 +192,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'reception' as NavViewId,
       label: 'Reception & Fast Check-In',
       icon: ScanLine,
-      badge: currentlyInsideCount > 0 ? `${currentlyInsideCount} Inside` : undefined,
-      badgeColor: 'bg-teal-100 text-teal-800 border-teal-300 font-semibold',
     },
     {
       id: 'walkin' as NavViewId,
@@ -212,15 +207,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'approvals' as NavViewId,
       label: 'Approval Queue',
       icon: CheckSquare,
-      badge: pendingApprovalsCount > 0 ? `${pendingApprovalsCount} Pending` : undefined,
-      badgeColor: 'bg-amber-100 text-amber-800 border-amber-300 font-semibold',
     },
     {
       id: 'share_modal_action' as const,
       label: 'Share Pre-Reg Link',
       icon: Share2,
-      badge: 'Guest Link',
-      badgeColor: 'bg-teal-100 text-teal-800 border-teal-300 font-bold',
       isAction: true,
     },
   ];
@@ -254,8 +245,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'emergency' as NavViewId,
       label: 'Emergency Evacuation',
       icon: AlertOctagon,
-      badge: state.isEmergencyActive ? 'ACTIVE' : undefined,
-      badgeColor: 'bg-red-500 text-white animate-pulse font-bold',
     },
   ];
 
@@ -283,8 +272,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'edge' as NavViewId,
       label: 'Edge Sync & Offline Buffer',
       icon: Wifi,
-      badge: pendingEdgeSyncCount > 0 ? `${pendingEdgeSyncCount} Queued` : undefined,
-      badgeColor: 'bg-blue-100 text-blue-800',
     },
     {
       id: 'reports' as NavViewId,
@@ -381,7 +368,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id="main-navigation-sidebar"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className={`fixed top-14 left-0 bottom-0 z-40 w-72 bg-white border-r border-[#D8E1E8] flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
+      className={`fixed top-14 left-0 bottom-0 z-40 w-72 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
+        isDark
+          ? 'bg-[#0B2544] border-r border-sky-500/50 text-sky-100 shadow-sky-950/50'
+          : 'bg-white border-r border-[#D8E1E8]'
+      } ${
         isPinned
           ? 'translate-x-0 opacity-100 pointer-events-auto shadow-md'
           : isOpen
@@ -390,28 +381,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }`}
     >
       {/* Active Persona Identity Header */}
-      <div className="p-3.5 border-b border-[#E2E8F0] bg-gradient-to-b from-[#F8FAFC] to-white shrink-0">
+      <div className={`p-3.5 border-b shrink-0 ${
+        isDark
+          ? 'border-sky-500/40 bg-gradient-to-b from-[#0F335C] to-[#0B2544]'
+          : 'border-[#E2E8F0] bg-gradient-to-b from-[#F8FAFC] to-white'
+      }`}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#123B5D] to-[#0F766E] text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 ring-2 ring-teal-500/20">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shadow-xs shrink-0 ring-2 ${
+              isDark
+                ? 'bg-gradient-to-br from-sky-400 to-sky-600 text-slate-950 ring-sky-400/40'
+                : 'bg-gradient-to-br from-[#123B5D] to-[#0F766E] text-white ring-teal-500/20'
+            }`}>
               {activeUser.name.charAt(0)}
             </div>
             <div className="min-w-0">
-              <div className="text-[13px] font-bold text-slate-900 leading-snug truncate">
+              <div className={`text-[13px] font-bold leading-snug truncate ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>
                 {activeUser.name}
               </div>
-              <div className="inline-flex items-center text-[10px] font-semibold text-teal-800 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-full mt-0.5">
+              <div className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full mt-0.5 border ${
+                isDark
+                  ? 'text-sky-200 bg-sky-900/60 border-sky-400/40'
+                  : 'text-teal-800 bg-teal-50 border-teal-200/80'
+              }`}>
                 <span>{storageService.getRoleLabel(role)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+        <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[11px] ${
+          isDark ? 'border-sky-800/60 text-sky-300' : 'border-slate-100 text-slate-500'
+        }`}>
           <span className="truncate">
-            ID: <strong className="font-mono text-[#123B5D] font-semibold">{activeUser.loginId}</strong>
+            ID: <strong className={`font-mono font-semibold ${isDark ? 'text-sky-200' : 'text-[#123B5D]'}`}>{activeUser.loginId}</strong>
           </span>
-          <span className="text-[10px] font-mono text-slate-400">
+          <span className={`text-[10px] font-mono ${isDark ? 'text-sky-400' : 'text-slate-400'}`}>
             {activeUser.departmentName || 'Enterprise'}
           </span>
         </div>
@@ -430,7 +437,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onMouseEnter={() => setHoveredSectionIdx(idx)}
               onMouseLeave={() => setHoveredSectionIdx(null)}
               className={`rounded-2xl transition-all duration-200 border ${
-                isExpanded
+                isDark
+                  ? isExpanded
+                    ? 'bg-[#123C6A] border-sky-400 shadow-md shadow-sky-950/40'
+                    : hasActiveItem
+                    ? 'bg-sky-900/30 border-sky-500/50'
+                    : 'bg-[#0E2F54] border-sky-500/30 hover:border-sky-400'
+                  : isExpanded
                   ? 'bg-slate-50/80 border-slate-200 shadow-2xs'
                   : hasActiveItem
                   ? 'bg-teal-50/30 border-teal-100'
@@ -443,7 +456,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id={`sidebar-function-menu-${sec.functionNumber}`}
                 onClick={() => handleToggleSection(idx)}
                 className={`w-full px-3 py-2 rounded-xl text-left flex items-center justify-between transition-all duration-150 cursor-pointer select-none group ${
-                  isExpanded
+                  isDark
+                    ? isExpanded
+                      ? 'text-white font-bold'
+                      : 'text-sky-200 hover:text-white font-semibold'
+                    : isExpanded
                     ? 'text-slate-950 font-bold'
                     : 'text-slate-600 hover:text-slate-900 font-semibold'
                 }`}
@@ -452,7 +469,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex items-center gap-2 min-w-0">
                   <div
                     className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all duration-150 ${
-                      isExpanded
+                      isDark
+                        ? isExpanded
+                          ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-xs'
+                          : 'bg-[#0A223E] text-sky-300 border-sky-500/40 group-hover:bg-sky-500/20 group-hover:text-sky-100'
+                        : isExpanded
                         ? 'bg-[#123B5D] text-white border-[#123B5D] shadow-2xs'
                         : 'bg-slate-100 text-slate-600 border-slate-200 group-hover:bg-teal-50 group-hover:text-teal-700'
                     }`}
@@ -460,25 +481,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <SecIcon className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-[11px] font-bold tracking-wider uppercase font-mono block truncate">
+                    <span className={`text-[11px] font-bold tracking-wider uppercase font-mono block truncate ${
+                      isDark ? 'text-sky-100' : ''
+                    }`}>
                       {sec.title}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md border font-semibold ${
-                      isExpanded
-                        ? 'bg-white text-teal-800 border-teal-200'
-                        : 'bg-slate-100 text-slate-500 border-slate-200'
-                    }`}
-                  >
-                    {sec.items.length}
-                  </span>
                   <ChevronDown
                     className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      isExpanded ? 'rotate-180 text-teal-700' : 'text-slate-400 group-hover:text-slate-700'
+                      isDark
+                        ? isExpanded
+                          ? 'rotate-180 text-sky-300'
+                          : 'text-sky-400 group-hover:text-sky-200'
+                        : isExpanded
+                        ? 'rotate-180 text-teal-700'
+                        : 'text-slate-400 group-hover:text-slate-700'
                     }`}
                   />
                 </div>
@@ -490,7 +510,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   isExpanded ? 'max-h-[900px] opacity-100 pb-2 px-2' : 'max-h-0 opacity-0 pointer-events-none'
                 }`}
               >
-                <nav className="space-y-1 pt-1 border-t border-slate-100">
+                <nav className={`space-y-1 pt-1 border-t ${isDark ? 'border-sky-500/30' : 'border-slate-100'}`}>
                   {sec.items.map((item) => {
                     const Icon = item.icon;
                     const isAction = item.isAction;
@@ -511,27 +531,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           }}
                           className={`group w-full flex items-center justify-between px-2.5 py-2 text-[12px] font-semibold rounded-xl transition-all duration-150 text-left shadow-2xs cursor-pointer ${
                             item.variant === 'danger'
-                              ? 'bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-900 border border-red-200 active:scale-98'
+                              ? isDark
+                                ? 'bg-red-950/50 hover:bg-red-900/70 text-red-200 border border-red-500/50'
+                                : 'bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-900 border border-red-200 active:scale-98'
+                              : isDark
+                              ? 'bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 border border-sky-400/50 shadow-xs'
                               : 'bg-gradient-to-r from-teal-50 to-emerald-50/80 text-teal-900 border border-teal-200 hover:bg-teal-100 shadow-2xs'
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <Icon
                               className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${
-                                item.variant === 'danger' ? 'text-red-600' : 'text-teal-700'
+                                item.variant === 'danger'
+                                  ? isDark ? 'text-red-400' : 'text-red-600'
+                                  : isDark ? 'text-sky-300' : 'text-teal-700'
                               }`}
                             />
                             <span className="truncate">{item.label}</span>
                           </div>
-                          {item.badge && (
-                            <span
-                              className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-full border leading-tight shrink-0 ${
-                                item.badgeColor || 'bg-teal-100 text-teal-800 border-teal-300'
-                              }`}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
                         </button>
                       );
                     }
@@ -546,34 +563,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         className={`group w-full flex items-center justify-between px-2.5 py-2 text-[12px] rounded-xl transition-all duration-150 text-left cursor-pointer ${
                           isActive
-                            ? 'bg-gradient-to-r from-[#123B5D] to-[#164871] text-white shadow-xs font-semibold'
+                            ? isDark
+                              ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-slate-950 font-bold shadow-md shadow-sky-500/30 border border-sky-300'
+                              : 'bg-gradient-to-r from-[#123B5D] to-[#164871] text-white shadow-xs font-semibold'
+                            : isDark
+                            ? 'text-sky-200 hover:bg-[#16497F] hover:text-white font-medium'
                             : 'text-slate-700 hover:bg-slate-100/90 hover:text-slate-950 font-medium'
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <Icon
                             className={`w-4 h-4 shrink-0 transition-colors ${
-                              isActive ? 'text-teal-300' : 'text-slate-400 group-hover:text-slate-700'
+                              isActive
+                                ? isDark ? 'text-slate-950' : 'text-teal-300'
+                                : isDark ? 'text-sky-400 group-hover:text-sky-200' : 'text-slate-400 group-hover:text-slate-700'
                             }`}
                           />
                           <span className="truncate">{item.label}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {item.badge && (
-                            <span
-                              className={`text-[9.5px] font-semibold px-1.5 py-0.2 rounded-full border leading-tight shrink-0 tracking-tight ${
-                                isActive
-                                  ? 'bg-white/20 text-white border-white/30'
-                                  : item.badgeColor || 'bg-slate-100 text-slate-700 border-slate-200'
-                              }`}
-                            >
-                              {item.badge}
-                            </span>
-                          )}
-                          {isActive && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 shrink-0 shadow-2xs" />
-                          )}
-                        </div>
+                        {isActive && (
+                          <div className="flex items-center shrink-0">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 shadow-2xs ${
+                              isDark ? 'bg-slate-950' : 'bg-teal-400'
+                            }`} />
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -585,26 +599,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Bottom Status Dock: Logout Button in place of RBAC Protected */}
-      <div className="p-3 border-t border-slate-200 bg-slate-50/90 shrink-0 flex items-center justify-between">
+      <div className={`p-3 border-t shrink-0 flex items-center justify-between ${
+        isDark ? 'border-sky-500/40 bg-[#0A223E]' : 'border-slate-200 bg-slate-50/90'
+      }`}>
         {onLogout ? (
           <button
             type="button"
             id="sidebar-bottom-logout-btn"
             onClick={onLogout}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-900 border border-red-200 text-xs font-bold transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 group"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs active:scale-95 group ${
+              isDark
+                ? 'bg-red-950/50 hover:bg-red-900/70 text-red-200 border-red-500/40'
+                : 'bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-900 border-red-200'
+            }`}
             title="Log out of session"
           >
-            <LogOut className="w-3.5 h-3.5 text-red-600 group-hover:scale-110 transition-transform" />
+            <LogOut className={`w-3.5 h-3.5 group-hover:scale-110 transition-transform ${isDark ? 'text-red-400' : 'text-red-600'}`} />
             <span>Logout Session</span>
           </button>
         ) : (
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-            <LogOut className="w-3.5 h-3.5 text-slate-400" />
+          <div className={`flex items-center gap-1.5 text-[11px] font-semibold ${isDark ? 'text-sky-300' : 'text-slate-500'}`}>
+            <LogOut className={`w-3.5 h-3.5 ${isDark ? 'text-sky-400' : 'text-slate-400'}`} />
             <span>Logout</span>
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <div className={`flex items-center gap-1.5 text-[10px] font-mono ${isDark ? 'text-sky-300' : 'text-slate-400'}`}>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
         </div>
       </div>
     </aside>

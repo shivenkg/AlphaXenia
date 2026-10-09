@@ -46,9 +46,10 @@ import { CompanyLogoWhitelabelView } from './CompanyLogoWhitelabelView';
 import { SuperAdminTypographyThemeCustomizer } from './SuperAdminTypographyThemeCustomizer';
 import { RealTimeThemePreviewGallery } from './RealTimeThemePreviewGallery';
 import { AdminGlobalSearchFilterBar } from './AdminGlobalSearchFilterBar';
+import { DatabaseConnectionConfigView } from './DatabaseConnectionConfigView';
 import { SUPPORTED_FONTS } from '../../utils/themeApplier';
 
-export type AdminActiveTab = 'users' | 'tenants' | 'customization' | 'sheets' | 'pass_designer' | 'roles_workflow' | 'saas_license' | 'whitelabel';
+export type AdminActiveTab = 'users' | 'tenants' | 'customization' | 'sheets' | 'pass_designer' | 'roles_workflow' | 'saas_license' | 'whitelabel' | 'database_config';
 
 interface AdminManagementViewProps {
   initialTab?: AdminActiveTab;
@@ -720,7 +721,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
             <ShieldCheck className="w-3.5 h-3.5 text-indigo-700" />
             <span>Roles & Role Names (RBAC)</span>
           </button>
-          {(isSuperAdmin || activeRole === 'TENANT_ADMIN' || storageService.hasFunctionAccess(activeUser?.id || '', 'whitelabel')) && (
+          {(isSuperAdmin || isTenantAdmin || storageService.hasFunctionAccess(activeUser?.id || '', 'whitelabel')) && (
             <button
               id="admin-tab-whitelabel"
               onClick={() => setActiveTab('whitelabel')}
@@ -750,6 +751,23 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
               <KeyRound className="w-3.5 h-3.5 text-amber-600" />
               <span>SaaS License Engine</span>
               <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 text-[9px] font-black uppercase tracking-wider ml-0.5">
+                Super Admin
+              </span>
+            </button>
+          )}
+          {isSuperAdmin && (
+            <button
+              id="admin-tab-database-config"
+              onClick={() => setActiveTab('database_config')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'database_config'
+                  ? 'bg-white text-cyan-900 shadow-xs'
+                  : 'text-[#526575] hover:text-[#172B3A]'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5 text-cyan-600" />
+              <span>Database Connections</span>
+              <span className="px-1.5 py-0.2 rounded bg-cyan-100 text-cyan-900 text-[9px] font-black uppercase tracking-wider ml-0.5">
                 Super Admin
               </span>
             </button>
@@ -1877,6 +1895,18 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
       {activeTab === 'whitelabel' && (
         <CompanyLogoWhitelabelView
           onSuccessToast={(msg) => {
+            setSuccessToast(msg);
+            setTimeout(() => setSuccessToast(null), 4000);
+          }}
+        />
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 9: Database Connection Configuration (Super Admin Only) */}
+      {/* ========================================================================= */}
+      {activeTab === 'database_config' && isSuperAdmin && (
+        <DatabaseConnectionConfigView
+          onNotifySuccess={(msg) => {
             setSuccessToast(msg);
             setTimeout(() => setSuccessToast(null), 4000);
           }}
