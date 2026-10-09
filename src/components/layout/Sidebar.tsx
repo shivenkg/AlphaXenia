@@ -404,12 +404,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {activeUser.name.charAt(0)}
             </div>
             <div className="min-w-0">
-              <div className={`text-[13px] font-bold leading-snug truncate ${
+              <div className={`font-bold leading-snug truncate text-xs sm:text-[13px] md:text-sm ${
                 isDark ? 'text-white' : 'text-slate-900'
               }`}>
                 {activeUser.name}
               </div>
-              <div className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full mt-0.5 border ${
+              <div className={`inline-flex items-center font-semibold px-2 py-0.5 rounded-full mt-0.5 border text-[9px] sm:text-[10px] ${
                 isDark
                   ? 'text-sky-200 bg-sky-900/60 border-sky-400/40'
                   : 'text-teal-800 bg-teal-50 border-teal-200/80'
@@ -420,13 +420,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[11px] ${
+        <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] sm:text-[11px] ${
           isDark ? 'border-sky-800/60 text-sky-300' : 'border-slate-100 text-slate-500'
         }`}>
           <span className="truncate">
             ID: <strong className={`font-mono font-semibold ${isDark ? 'text-sky-200' : 'text-[#123B5D]'}`}>{activeUser.loginId}</strong>
           </span>
-          <span className={`text-[10px] font-mono ${isDark ? 'text-sky-400' : 'text-slate-400'}`}>
+          <span className={`font-mono text-[9px] sm:text-[10px] ${isDark ? 'text-sky-400' : 'text-slate-400'}`}>
             {activeUser.departmentName || 'Enterprise'}
           </span>
         </div>

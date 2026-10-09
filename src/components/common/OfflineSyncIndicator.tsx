@@ -64,55 +64,45 @@ export const OfflineSyncIndicator: React.FC = () => {
         <button
           id="offline-sync-status-indicator"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer select-none ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold border transition-all cursor-pointer select-none ${
             !isOnline
-              ? pendingCount > 0
-                ? 'bg-rose-950/80 text-rose-200 border-rose-500 shadow-sm animate-pulse'
-                : 'bg-amber-950/70 text-amber-200 border-amber-500/70'
-              : pendingCount > 0
-              ? 'bg-amber-950/80 text-amber-300 border-amber-400 shadow-sm'
-              : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40 hover:bg-emerald-900/60'
+              ? 'bg-red-600 text-white border-red-400 shadow-md shadow-red-900/30'
+              : 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-900/30'
           }`}
-          title="Click to inspect Offline Sync Buffer & Central Cloud Push Queue"
+          title="Automated Realtime Sync: Click to inspect offline sync buffer and database state"
         >
           {/* Status Icon */}
           <div className="flex items-center gap-1.5">
             {!isOnline ? (
-              <WifiOff className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-            ) : pendingCount > 0 ? (
-              <CloudUpload className="w-3.5 h-3.5 text-amber-400 animate-bounce shrink-0" />
+              <WifiOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-pulse shrink-0" />
             ) : (
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-200 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-white"></span>
               </span>
             )}
 
-            {/* Label */}
-            <span className="font-medium tracking-tight">
-              {!isOnline
-                ? 'Edge: Offline'
-                : pendingCount > 0
-                ? 'Sync Alert'
-                : 'Cloud: Synced'}
+            {/* Label - responsive font size */}
+            <span className="font-bold tracking-tight text-[11px] sm:text-xs md:text-sm">
+              {!isOnline ? 'No Network (Red)' : 'Realtime Sync (Green)'}
             </span>
           </div>
 
-          {/* Pending Badge Counter */}
+          {/* Pending Badge Counter - responsive font size */}
           {pendingCount > 0 ? (
             <span
               id="pending-sync-counter-badge"
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold tracking-tight ${
+              className={`px-1.5 py-0.2 rounded-full font-mono font-bold tracking-tight text-[9px] sm:text-[10px] md:text-xs ${
                 !isOnline
-                  ? 'bg-rose-500 text-white animate-bounce'
-                  : 'bg-amber-400 text-slate-900 font-bold'
+                  ? 'bg-red-950 text-red-100 border border-red-400/50'
+                  : 'bg-emerald-950 text-emerald-100 border border-emerald-400/50'
               }`}
             >
-              {pendingCount} waiting
+              {pendingCount} queued
             </span>
           ) : (
-            <span className="text-[10px] text-emerald-400/80 hidden xl:inline font-mono">
-              0 queued
+            <span className="text-[9px] sm:text-[10px] md:text-xs text-emerald-100 hidden sm:inline font-mono">
+              Synced
             </span>
           )}
         </button>
@@ -126,38 +116,44 @@ export const OfflineSyncIndicator: React.FC = () => {
             className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden text-slate-900 animate-in fade-in zoom-in-95 duration-150"
           >
             {/* Modal Header */}
-            <div className="bg-[#123B5D] text-white px-6 py-4 flex items-center justify-between border-b border-[#0f304c]">
-              <div className="flex items-center gap-3">
+            <div
+              className={`text-white px-4 sm:px-6 py-3.5 sm:py-4 flex items-center justify-between border-b ${
+                !isOnline
+                  ? 'bg-gradient-to-r from-red-700 via-rose-600 to-red-800 border-red-500'
+                  : 'bg-gradient-to-r from-emerald-700 via-green-600 to-teal-800 border-emerald-500'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3">
                 <div
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                    isOnline ? 'bg-emerald-600' : 'bg-rose-600'
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${
+                    isOnline ? 'bg-emerald-900/90 ring-2 ring-emerald-300/40' : 'bg-red-900/90 ring-2 ring-red-300/40'
                   }`}
                 >
-                  {isOnline ? <Wifi className="w-5 h-5 text-white" /> : <WifiOff className="w-5 h-5 text-white" />}
+                  {isOnline ? <Wifi className="w-4 h-4 sm:w-5 sm:h-5 text-white" /> : <WifiOff className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
                 </div>
                 <div>
-                  <h2 className="text-base font-bold flex items-center gap-2">
-                    <span>Edge Offline Sync State & Buffer</span>
+                  <h2 className="text-sm sm:text-base md:text-lg font-bold flex items-center gap-2 flex-wrap">
+                    <span>Automated Edge Sync Engine</span>
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold uppercase ${
+                      className={`text-[9px] sm:text-[10px] md:text-xs px-2 py-0.5 rounded-full font-mono font-bold uppercase ${
                         isOnline
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
-                          : 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
+                          ? 'bg-emerald-950/80 text-emerald-100 border border-emerald-300/40'
+                          : 'bg-red-950/80 text-red-100 border border-red-300/40'
                       }`}
                     >
-                      {isOnline ? 'ONLINE' : 'OFFLINE (BUFFERED)'}
+                      {isOnline ? 'ONLINE (GREEN)' : 'NO NETWORK (RED)'}
                     </span>
                   </h2>
-                  <p className="text-xs text-slate-300">
-                    Real-time replication state between physical edge controllers and central database.
+                  <p className="text-[10px] sm:text-xs md:text-sm text-white/80">
+                    Automated data replication between local devices and Supabase PostgreSQL database.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 

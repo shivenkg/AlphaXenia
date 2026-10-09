@@ -614,6 +614,8 @@ export interface RealtimeSyncInfo {
   totalRecordsSynced?: number;
   lastError?: string | null;
   targetHost: string;
+  isAutomatedSyncActive: boolean;
+  autoSyncIntervalSec: number;
   recordsSyncedSummary?: Record<string, number>;
 }
 

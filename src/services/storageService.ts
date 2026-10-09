@@ -811,6 +811,8 @@ class VMSStorageService {
     lastSyncedAt: new Date().toISOString(),
     totalRecordsSynced: 82,
     targetHost: 'db.eonmoodozhicjlgnmzkx.supabase.co',
+    isAutomatedSyncActive: true,
+    autoSyncIntervalSec: 15,
     recordsSyncedSummary: {
       tenants: 2,
       sites: 4,
@@ -867,10 +869,17 @@ class VMSStorageService {
       this.notify();
     });
 
-    // Check heartbeat and flush sync every 25 seconds
+    // Automated continuous background synchronization loop (every 15 seconds)
     setInterval(() => {
       this.checkNetworkAndHeartbeatSync();
-    }, 25000);
+    }, 15000);
+
+    // Initial automated background synchronization
+    setTimeout(() => {
+      if (this.realtimeSyncInfo.isOnline) {
+        this.executeRealtimeDatabaseSync();
+      }
+    }, 1200);
   }
 
   private loadState(): VMSState {
