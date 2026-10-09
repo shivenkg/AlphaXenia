@@ -13,7 +13,23 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
+  let serverDataCache: any = null;
+  let lastServerSyncAt: string | null = null;
+  let serverSyncCount = 0;
+
   // Database API Endpoints for Supabase PostgreSQL
+  app.get('/api/database/realtime-status', (_req, res) => {
+    res.json({
+      online: true,
+      lastServerSyncAt,
+      serverSyncCount,
+      configuredHost: 'db.eonmoodozhicjlgnmzkx.supabase.co',
+      port: 5432,
+      database: 'postgres',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   app.post('/api/database/test-connection', async (req, res) => {
     try {
       const config = req.body || {};
@@ -43,12 +59,23 @@ async function startServer() {
   app.post('/api/database/sync-all-local-data', async (req, res) => {
     try {
       const { config, localData } = req.body || {};
+      if (localData) {
+        serverDataCache = localData;
+        lastServerSyncAt = new Date().toISOString();
+        serverSyncCount++;
+      }
       const result = await DatabaseService.syncAllData(config, localData);
-      res.json(result);
+      res.json({
+        ...result,
+        serverCached: true,
+        lastServerSyncAt,
+        serverSyncCount,
+      });
     } catch (err: any) {
       res.status(500).json({
         success: false,
         error: err?.message || 'Failed to sync local data to database',
+        lastServerSyncAt,
       });
     }
   });

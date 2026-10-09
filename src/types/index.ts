@@ -602,3 +602,18 @@ export interface DatabaseAuditLog {
   latencyMs?: number;
 }
 
+export type RealtimeSyncStatus = 'SYNCED' | 'SYNCING' | 'PENDING' | 'NO_NETWORK' | 'ERROR';
+
+export interface RealtimeSyncInfo {
+  status: RealtimeSyncStatus;
+  isOnline: boolean;
+  isSimulatedOffline: boolean;
+  pendingCount: number;
+  lastSyncedAt: string | null;
+  lastSyncDurationMs?: number;
+  totalRecordsSynced?: number;
+  lastError?: string | null;
+  targetHost: string;
+  recordsSyncedSummary?: Record<string, number>;
+}
+

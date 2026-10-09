@@ -33,6 +33,7 @@ import {
 import { storageService } from '../../services/storageService';
 import { NavViewId, UserRole } from '../../types';
 import { getGlobalThemeMode } from '../../utils/themeApplier';
+import { SidebarSyncTab } from './SidebarSyncTab';
 
 interface SidebarProps {
   currentView: NavViewId;
@@ -236,11 +237,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Invitations & QR Passes',
       icon: QrCode,
     },
-    {
-      id: 'badges' as NavViewId,
-      label: 'Badge Designer & Printing',
-      icon: Printer,
-    },
+    ...(isSuperAdmin
+      ? [
+          {
+            id: 'badges' as NavViewId,
+            label: 'Badge Designer & Pass Studio',
+            icon: Printer,
+          },
+        ]
+      : []),
     {
       id: 'emergency' as NavViewId,
       label: 'Emergency Evacuation',
@@ -380,6 +385,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : '-translate-x-full opacity-0 pointer-events-none'
       }`}
     >
+      {/* Top of Sidemenu Bar: Realtime Database Sync Tab */}
+      <SidebarSyncTab isDark={isDark} onSelectView={onSelectView} />
+
       {/* Active Persona Identity Header */}
       <div className={`p-3.5 border-b shrink-0 ${
         isDark

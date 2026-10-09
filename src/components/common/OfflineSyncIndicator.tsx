@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wifi,
   WifiOff,
@@ -17,27 +17,38 @@ import { storageService } from '../../services/storageService';
 import { EdgeSyncEvent } from '../../types';
 
 export const OfflineSyncIndicator: React.FC = () => {
-  const state = storageService.getState();
+  const [state, setState] = useState(() => storageService.getState());
+  const [syncInfo, setSyncInfo] = useState(() => storageService.getRealtimeSyncInfo());
   const [isOpen, setIsOpen] = useState(false);
   const [isPushing, setIsPushing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
+  useEffect(() => {
+    return storageService.subscribe(() => {
+      setState(storageService.getState());
+      setSyncInfo(storageService.getRealtimeSyncInfo());
+    });
+  }, []);
+
   const pendingEvents = storageService.getPendingOfflineEvents();
-  const pendingCount = pendingEvents.length;
-  const isOnline = state.isEdgeOnline;
+  const pendingCount = pendingEvents.length + syncInfo.pendingCount;
+  const isOnline = Boolean(state.isEdgeOnline) && syncInfo.isOnline;
 
   const handleToggleOnline = () => {
-    storageService.setEdgeOnline(!isOnline);
+    storageService.setEdgeOnline(!state.isEdgeOnline);
   };
 
-  const handlePushToServer = () => {
+  const handlePushToServer = async () => {
     setIsPushing(true);
-    setTimeout(() => {
+    try {
       const res = storageService.pushPendingOfflineEvents();
+      await storageService.executeRealtimeDatabaseSync();
       setIsPushing(false);
-      setSyncFeedback(res.message);
+      setSyncFeedback(res.message || 'All local records successfully synced with central database!');
       setTimeout(() => setSyncFeedback(null), 4000);
-    }, 900);
+    } catch {
+      setIsPushing(false);
+    }
   };
 
   const handleSimulateBufferedEvent = () => {

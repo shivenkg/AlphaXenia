@@ -17,7 +17,9 @@ import {
   Zap,
   Check,
   FileDown,
-  Loader2
+  Loader2,
+  Palette,
+  Layers
 } from 'lucide-react';
 import { storageService } from '../../services/storageService';
 import { Visit, BadgeTemplate, HardwareDevice } from '../../types';
@@ -25,6 +27,7 @@ import { VisitorQrPassModal } from '../common/VisitorQrPassModal';
 import { ExpressMobileCheckoutModal } from './ExpressMobileCheckoutModal';
 import { JSAlphaSoftLogo } from '../common/JSAlphaSoftLogo';
 import { generateVisitorPassPdf } from '../../utils/passPdfGenerator';
+import { BadgePassDesigner } from './BadgePassDesigner';
 
 interface BadgePrinterViewProps {
   initialVisit?: Visit | null;
@@ -34,6 +37,8 @@ export const BadgePrinterView: React.FC<BadgePrinterViewProps> = ({ initialVisit
   const state = storageService.getState();
   const activeTenant = storageService.getActiveTenant();
   const activeSite = storageService.getActiveSite();
+
+  const [activeTab, setActiveTab] = useState<'DESIGNER' | 'SPOOLER'>('DESIGNER');
 
   const [selectedVisitId, setSelectedVisitId] = useState<string>(
     initialVisit?.id || state.visits[0]?.id || ''
@@ -149,58 +154,113 @@ export const BadgePrinterView: React.FC<BadgePrinterViewProps> = ({ initialVisit
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="bg-white p-5 rounded-xl border border-[#D8E1E8] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Printer className="w-5 h-5 text-[#0F766E]" />
-            <h1 className="text-lg font-bold text-[#172B3A]">
-              Badge Designer & Express Touchless Mobile Spooler
-            </h1>
-          </div>
-          <p className="text-xs text-[#526575] mt-1">
-            Dynamic QR codes embedded on thermal badges for instant, touchless smartphone check-out. Generic ZPL/ESC-P hardware abstraction.
-          </p>
+      {/* Top Segmented Navigation: Pass Designer vs Hardware Spooler */}
+      <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-lg">
+          <button
+            id="tab-btn-badge-designer"
+            onClick={() => setActiveTab('DESIGNER')}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-colors flex items-center gap-2 cursor-pointer ${
+              activeTab === 'DESIGNER'
+                ? 'bg-white text-teal-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Palette className="w-4 h-4 text-teal-700" />
+            <span>Pass Designer (Drag & Drop Studio)</span>
+          </button>
+          <button
+            id="tab-btn-badge-spooler"
+            onClick={() => setActiveTab('SPOOLER')}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-md transition-colors flex items-center gap-2 cursor-pointer ${
+              activeTab === 'SPOOLER'
+                ? 'bg-white text-teal-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Printer className="w-4 h-4 text-slate-700" />
+            <span>Thermal Spooler & Hardware Queue</span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            id="badge-printer-download-pdf-btn"
-            onClick={handleDownloadPdf}
-            disabled={isGeneratingPdf}
-            className="bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
-            title="Generate and download printable visitor security pass as PDF"
-          >
-            {isGeneratingPdf ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-700" />
-                <span>Generating PDF...</span>
-              </>
-            ) : (
-              <>
-                <FileDown className="w-3.5 h-3.5 text-teal-700" />
-                <span>Download Pass PDF</span>
-              </>
-            )}
-          </button>
-
-          <button
-            id="mobile-scan-simulator-trigger-btn"
-            onClick={() => setIsMobileScannerOpen(true)}
-            className="bg-gradient-to-r from-teal-600 to-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-95 transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-          >
-            <Smartphone className="w-4 h-4" />
-            <span>Simulate Mobile Check-Out Scan</span>
-          </button>
-
-          <button
-            onClick={handleBrowserNativePrint}
-            className="bg-[#F4F7FA] text-[#123B5D] border border-[#D8E1E8] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-100 transition"
-          >
-            Browser Print
-          </button>
+        <div className="flex items-center gap-2 text-xs text-slate-500 pr-2">
+          <span className="font-medium text-slate-700">Target Visitor:</span>
+          <span className="font-semibold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 font-mono text-[11px]">
+            {selectedVisit?.visitorName || 'Active Visitor'}
+          </span>
         </div>
       </div>
+
+      {activeTab === 'DESIGNER' ? (
+        <BadgePassDesigner
+          initialVisit={selectedVisit}
+          onTemplateSaved={(savedTmpl) => {
+            setSelectedTemplateId(savedTmpl.id);
+          }}
+          onNavigateToSpooler={() => setActiveTab('SPOOLER')}
+        />
+      ) : (
+        <>
+          {/* Top Banner */}
+          <div className="bg-white p-5 rounded-xl border border-[#D8E1E8] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Printer className="w-5 h-5 text-[#0F766E]" />
+                <h1 className="text-lg font-bold text-[#172B3A]">
+                  Thermal Hardware Spooler & ZPL Driver
+                </h1>
+              </div>
+              <p className="text-xs text-[#526575] mt-1">
+                Dynamic QR codes embedded on thermal badges for instant, touchless smartphone check-out. Generic ZPL/ESC-P hardware abstraction.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setActiveTab('DESIGNER')}
+                className="bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <Palette className="w-3.5 h-3.5" />
+                <span>Open Drag-and-Drop Designer</span>
+              </button>
+
+              <button
+                id="badge-printer-download-pdf-btn"
+                onClick={handleDownloadPdf}
+                disabled={isGeneratingPdf}
+                className="bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                title="Generate and download printable visitor security pass as PDF"
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-700" />
+                    <span>Generating PDF...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-3.5 h-3.5 text-slate-700" />
+                    <span>Download Pass PDF</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                id="mobile-scan-simulator-trigger-btn"
+                onClick={() => setIsMobileScannerOpen(true)}
+                className="bg-gradient-to-r from-teal-600 to-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold hover:opacity-95 transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>Simulate Scan</span>
+              </button>
+
+              <button
+                onClick={handleBrowserNativePrint}
+                className="bg-[#F4F7FA] text-[#123B5D] border border-[#D8E1E8] px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-slate-100 transition"
+              >
+                Browser Print
+              </button>
+            </div>
+          </div>
 
       {feedback && (
         <div
@@ -581,6 +641,8 @@ export const BadgePrinterView: React.FC<BadgePrinterViewProps> = ({ initialVisit
         onClose={() => setIsPassModalOpen(false)}
         visit={selectedVisit}
       />
+        </>
+      )}
     </div>
   );
 };

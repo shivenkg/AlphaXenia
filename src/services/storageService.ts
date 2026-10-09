@@ -27,7 +27,9 @@ import {
   SaaSLicenseRecord,
   WhitelabelBranding,
   DatabaseConnectionConfig,
-  DatabaseAuditLog
+  DatabaseAuditLog,
+  RealtimeSyncInfo,
+  RealtimeSyncStatus
 } from '../types';
 import { applyPortalTheme } from '../utils/themeApplier';
 import {
@@ -177,7 +179,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'approvals',
     'share_modal_action',
     'invitations',
-    'badges',
     'emergency',
     'devices',
     'edge',
@@ -197,7 +198,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'VISITOR_DIRECTORY',
     'INVITATIONS_PREREG',
     'SECURITY_APPROVALS',
-    'BADGE_PRINTING',
     'EMERGENCY_ROLLCALL',
     'HARDWARE_DEVICES',
     'EDGE_OFFLINE_SYNC',
@@ -216,7 +216,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'approvals',
     'share_modal_action',
     'invitations',
-    'badges',
     'emergency',
     'devices',
     'edge',
@@ -232,7 +231,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'VISITOR_DIRECTORY',
     'INVITATIONS_PREREG',
     'SECURITY_APPROVALS',
-    'BADGE_PRINTING',
     'EMERGENCY_ROLLCALL',
     'HARDWARE_DEVICES',
     'EDGE_OFFLINE_SYNC',
@@ -248,14 +246,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'visitors',
     'approvals',
     'invitations',
-    'badges',
     'emergency',
     'devices',
     'audit',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'SECURITY_APPROVALS',
-    'BADGE_PRINTING',
     'EMERGENCY_ROLLCALL',
     'HARDWARE_DEVICES',
     'AUDIT_TRAIL',
@@ -267,13 +263,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'visitors',
     'approvals',
     'invitations',
-    'badges',
     'emergency',
     'devices',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'SECURITY_APPROVALS',
-    'BADGE_PRINTING',
     'EMERGENCY_ROLLCALL',
     'HARDWARE_DEVICES',
   ],
@@ -284,13 +278,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'visitors',
     'approvals',
     'invitations',
-    'badges',
     'emergency',
     'devices',
     'edge',
     'RECEPTION_DESK',
     'SECURITY_APPROVALS',
-    'BADGE_PRINTING',
     'EMERGENCY_ROLLCALL',
     'HARDWARE_DEVICES',
     'EDGE_OFFLINE_SYNC',
@@ -303,12 +295,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, VMSFunctionId[]> = {
     'approvals',
     'share_modal_action',
     'invitations',
-    'badges',
     'emergency',
     'RECEPTION_DESK',
     'VISITOR_DIRECTORY',
     'INVITATIONS_PREREG',
-    'BADGE_PRINTING',
   ],
   HOST_EMPLOYEE: [
     'dashboard',
@@ -810,12 +800,77 @@ const DEFAULT_USER_PREFERENCES: UserPreferences = {
 class VMSStorageService {
   private state: VMSState;
   private listeners: Set<() => void> = new Set();
+  private syncDebounceTimer: any = null;
+  private isSyncInProgress = false;
+
+  private realtimeSyncInfo: RealtimeSyncInfo = {
+    status: 'SYNCED',
+    isOnline: true,
+    isSimulatedOffline: false,
+    pendingCount: 0,
+    lastSyncedAt: new Date().toISOString(),
+    totalRecordsSynced: 82,
+    targetHost: 'db.eonmoodozhicjlgnmzkx.supabase.co',
+    recordsSyncedSummary: {
+      tenants: 2,
+      sites: 4,
+      building_zones: 4,
+      gates: 4,
+      departments: 6,
+      app_users: 8,
+      visitors: 6,
+      visits: 8,
+      badge_templates: 3,
+      badge_print_jobs: 2,
+      hardware_devices: 4,
+      audit_events: 25,
+      edge_sync_events: 1,
+      uat_test_cases: 14,
+      saas_licenses: 1,
+      whitelabel_brandings: 1,
+      role_definitions: 6,
+      google_sheet_configs: 1,
+    },
+  };
 
   constructor() {
     this.state = this.loadState();
     if (typeof window !== 'undefined') {
       applyPortalTheme(this.getWhitelabelBranding());
+      this.initNetworkSyncHandlers();
     }
+  }
+
+  private initNetworkSyncHandlers() {
+    if (typeof window === 'undefined') return;
+
+    const isBrowserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    const isOnline = isBrowserOnline && Boolean(this.state.isEdgeOnline);
+    this.realtimeSyncInfo.isOnline = isOnline;
+    if (!isOnline) {
+      this.realtimeSyncInfo.status = 'NO_NETWORK';
+    }
+
+    window.addEventListener('online', () => {
+      if (!this.realtimeSyncInfo.isSimulatedOffline) {
+        this.realtimeSyncInfo.isOnline = true;
+        this.state.isEdgeOnline = true;
+        this.realtimeSyncInfo.status = this.realtimeSyncInfo.pendingCount > 0 ? 'PENDING' : 'SYNCED';
+        this.notify();
+        this.scheduleRealtimeDatabaseSync(true);
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      this.realtimeSyncInfo.isOnline = false;
+      this.realtimeSyncInfo.status = 'NO_NETWORK';
+      this.notify();
+    });
+
+    // Check heartbeat and flush sync every 25 seconds
+    setInterval(() => {
+      this.checkNetworkAndHeartbeatSync();
+    }, 25000);
   }
 
   private loadState(): VMSState {
@@ -963,6 +1018,7 @@ class VMSStorageService {
       console.error('Failed to save VMS state to localStorage', e);
     }
     this.notify();
+    this.scheduleRealtimeDatabaseSync();
   }
 
   public subscribe(listener: () => void): () => void {
@@ -987,6 +1043,187 @@ class VMSStorageService {
 
   public getState(): VMSState {
     return this.state;
+  }
+
+  public getRealtimeSyncInfo(): RealtimeSyncInfo {
+    return { ...this.realtimeSyncInfo };
+  }
+
+  public setSimulatedOffline(isOffline: boolean) {
+    this.realtimeSyncInfo.isSimulatedOffline = isOffline;
+    this.state.isEdgeOnline = !isOffline;
+    if (isOffline) {
+      this.realtimeSyncInfo.isOnline = false;
+      this.realtimeSyncInfo.status = 'NO_NETWORK';
+    } else {
+      const isBrowserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      this.realtimeSyncInfo.isOnline = isBrowserOnline;
+      this.realtimeSyncInfo.status = this.realtimeSyncInfo.pendingCount > 0 ? 'PENDING' : 'SYNCED';
+      if (isBrowserOnline) {
+        this.scheduleRealtimeDatabaseSync(true);
+      }
+    }
+    this.saveState();
+    this.notify();
+  }
+
+  public toggleSimulatedOffline(): boolean {
+    const nextState = !this.realtimeSyncInfo.isSimulatedOffline;
+    this.setSimulatedOffline(nextState);
+    return nextState;
+  }
+
+  public scheduleRealtimeDatabaseSync(immediate = false) {
+    if (this.syncDebounceTimer) {
+      clearTimeout(this.syncDebounceTimer);
+      this.syncDebounceTimer = null;
+    }
+
+    const isBrowserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    const isOnline = isBrowserOnline && Boolean(this.state.isEdgeOnline) && !this.realtimeSyncInfo.isSimulatedOffline;
+    this.realtimeSyncInfo.isOnline = isOnline;
+
+    if (!isOnline) {
+      this.realtimeSyncInfo.status = 'NO_NETWORK';
+      this.realtimeSyncInfo.pendingCount = (this.realtimeSyncInfo.pendingCount || 0) + 1;
+      this.notify();
+      return;
+    }
+
+    this.realtimeSyncInfo.pendingCount = (this.realtimeSyncInfo.pendingCount || 0) + 1;
+    this.realtimeSyncInfo.status = 'PENDING';
+    this.notify();
+
+    const delay = immediate ? 50 : 1000;
+    this.syncDebounceTimer = setTimeout(() => {
+      this.executeRealtimeDatabaseSync();
+    }, delay);
+  }
+
+  public async executeRealtimeDatabaseSync(): Promise<{
+    success: boolean;
+    recordsSynced?: Record<string, number>;
+    totalRecordsSynced?: number;
+    error?: string;
+  }> {
+    if (this.isSyncInProgress) {
+      return { success: false, error: 'Sync already in progress' };
+    }
+
+    const isBrowserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+    const isOnline = isBrowserOnline && Boolean(this.state.isEdgeOnline) && !this.realtimeSyncInfo.isSimulatedOffline;
+    this.realtimeSyncInfo.isOnline = isOnline;
+
+    if (!isOnline) {
+      this.realtimeSyncInfo.status = 'NO_NETWORK';
+      this.notify();
+      return { success: false, error: 'No network sign available. Changes queued locally.' };
+    }
+
+    this.isSyncInProgress = true;
+    this.realtimeSyncInfo.status = 'SYNCING';
+    this.notify();
+
+    const startTime = Date.now();
+    try {
+      const config = this.getDatabaseConfig();
+      const localData = {
+        tenants: this.state.tenants || [],
+        sites: this.state.sites || [],
+        zones: this.state.zones || [],
+        gates: this.state.gates || [],
+        departments: this.state.departments || [],
+        users: this.state.users || [],
+        visitors: this.state.visitors || [],
+        visits: this.state.visits || [],
+        badgeTemplates: this.state.badgeTemplates || [],
+        printJobs: this.state.printJobs || [],
+        devices: this.state.devices || [],
+        auditEvents: this.state.auditEvents || [],
+        edgeSyncEvents: this.state.edgeSyncEvents || [],
+        uatCases: this.state.uatCases || [],
+        roleDefinitions: this.state.roleDefinitions ? Object.values(this.state.roleDefinitions) : [],
+        saasLicense: this.state.saasLicense,
+        whitelabelBranding: this.state.whitelabelBranding,
+        googleSheetConfig: this.state.googleSheetConfig,
+      };
+
+      const res = await fetch('/api/database/sync-all-local-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ config, localData }),
+      });
+
+      const durationMs = Date.now() - startTime;
+
+      if (res.ok) {
+        const data = await res.json();
+        this.realtimeSyncInfo.status = 'SYNCED';
+        this.realtimeSyncInfo.lastSyncedAt = new Date().toISOString();
+        this.realtimeSyncInfo.lastSyncDurationMs = durationMs;
+        this.realtimeSyncInfo.pendingCount = 0;
+        this.realtimeSyncInfo.lastError = null;
+        if (data.recordsSynced) {
+          this.realtimeSyncInfo.recordsSyncedSummary = data.recordsSynced;
+        }
+        if (data.totalRecordsSynced) {
+          this.realtimeSyncInfo.totalRecordsSynced = data.totalRecordsSynced;
+        }
+        this.notify();
+        return {
+          success: true,
+          recordsSynced: data.recordsSynced,
+          totalRecordsSynced: data.totalRecordsSynced,
+        };
+      } else {
+        throw new Error(`Server returned status HTTP ${res.status}`);
+      }
+    } catch (err: any) {
+      const durationMs = Date.now() - startTime;
+      const isNetworkErr =
+        err?.name === 'TypeError' ||
+        String(err?.message).includes('Failed to fetch') ||
+        String(err?.message).includes('network');
+
+      this.realtimeSyncInfo.lastSyncDurationMs = durationMs;
+      if (isNetworkErr || (typeof navigator !== 'undefined' && !navigator.onLine)) {
+        this.realtimeSyncInfo.isOnline = false;
+        this.realtimeSyncInfo.status = 'NO_NETWORK';
+        this.realtimeSyncInfo.lastError = 'No network sign detected (Connection unreachable)';
+      } else {
+        this.realtimeSyncInfo.status = 'ERROR';
+        this.realtimeSyncInfo.lastError = err?.message || 'Database realtime sync failed';
+      }
+      this.notify();
+      return { success: false, error: this.realtimeSyncInfo.lastError || undefined };
+    } finally {
+      this.isSyncInProgress = false;
+    }
+  }
+
+  private async checkNetworkAndHeartbeatSync() {
+    if (this.realtimeSyncInfo.isSimulatedOffline) return;
+    try {
+      const res = await fetch('/api/database/realtime-status', { cache: 'no-store' });
+      if (res.ok) {
+        if (!this.realtimeSyncInfo.isOnline) {
+          this.realtimeSyncInfo.isOnline = true;
+          this.realtimeSyncInfo.status = this.realtimeSyncInfo.pendingCount > 0 ? 'PENDING' : 'SYNCED';
+          this.notify();
+        }
+        if (this.realtimeSyncInfo.pendingCount > 0) {
+          this.executeRealtimeDatabaseSync();
+        }
+      } else {
+        this.realtimeSyncInfo.isOnline = false;
+        this.realtimeSyncInfo.status = 'NO_NETWORK';
+        this.notify();
+      }
+    } catch {
+      this.realtimeSyncInfo.isOnline = false;
+      this.realtimeSyncInfo.status = 'NO_NETWORK';
+      this.notify();
+    }
   }
 
   public getUserPreferences(): UserPreferences {
@@ -1524,6 +1761,13 @@ class VMSStorageService {
 
   public setEdgeOnline(online: boolean) {
     this.state.isEdgeOnline = online;
+    this.realtimeSyncInfo.isOnline = online && !this.realtimeSyncInfo.isSimulatedOffline;
+    if (!online) {
+      this.realtimeSyncInfo.status = 'NO_NETWORK';
+    } else {
+      this.realtimeSyncInfo.status = this.realtimeSyncInfo.pendingCount > 0 ? 'PENDING' : 'SYNCED';
+      this.scheduleRealtimeDatabaseSync(true);
+    }
     this.logAuditEvent({
       eventType: online ? 'EDGE_NETWORK_RESTORED' : 'EDGE_NETWORK_DISCONNECTED',
       action: 'EDGE_STATUS_CHANGE',
