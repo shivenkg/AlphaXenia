@@ -44,7 +44,7 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
 
   const state = storageService.getState();
   const activeUser = storageService.getActiveUser();
-  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const isSuperAdmin = activeUser?.role === 'SUPER_ADMIN';
   const users = state.users || [];
   const tenants = state.tenants || [];
   const auditLogs = state.auditEvents || [];
@@ -259,9 +259,9 @@ export const AdminGlobalSearchFilterBar: React.FC<AdminGlobalSearchFilterBarProp
                 className="bg-[#F8FAFC] text-slate-700 font-semibold text-xs border border-slate-200 rounded-xl px-2.5 py-2 focus:outline-none focus:border-[#123B5D] cursor-pointer hover:bg-white transition"
               >
                 <option value="ALL">Role: All Roles</option>
-                <option value="PLATFORM_SUPER_ADMIN">Super Admin</option>
-                <option value="TENANT_ADMIN">Tenant Admin</option>
-                <option value="TENANT_SECURITY_ADMIN">Security Admin</option>
+                <option value="SUPER_ADMIN">Super Admin</option>
+                <option value="ADMIN">Tenant Admin</option>
+                <option value="SECURITY_ADMIN">Security Admin</option>
                 <option value="RECEPTIONIST">Receptionist</option>
                 <option value="SECURITY_GUARD">Security Guard</option>
                 <option value="HOST_EMPLOYEE">Host Employee</option>

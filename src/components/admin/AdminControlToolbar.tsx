@@ -35,7 +35,7 @@ export const AdminControlToolbar: React.FC<AdminControlToolbarProps> = ({
 }) => {
   const state = storageService.getState();
   const activeUser = storageService.getActiveUser();
-  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const isSuperAdmin = activeUser?.role === 'SUPER_ADMIN';
   const activeTenant = state.tenants.find((t) => t.id === state.activeTenantId) || state.tenants[0];
   const [resetFeedback, setResetFeedback] = useState(false);
 
@@ -177,7 +177,7 @@ export const AdminControlToolbar: React.FC<AdminControlToolbarProps> = ({
           </button>
         )}
 
-        {/* Auto-Rendering Live Stream Status Pill */}
+        {/* Auto-Rendering Live Stream Status Pill (Hidden per user request) */}
         <button
           id="admin-toolbar-auto-render-btn"
           type="button"
@@ -187,11 +187,8 @@ export const AdminControlToolbar: React.FC<AdminControlToolbarProps> = ({
               ? 'Auto-Rendering is LIVE: Reactive facility stream & visitor queues actively auto-render'
               : 'Auto-Rendering is PAUSED: Click to resume automatic live rendering'
           }
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition shrink-0 cursor-pointer ${
-            isAutoRenderingEnabled
-              ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/50 hover:bg-emerald-900/70 shadow-xs'
-              : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:bg-slate-700'
-          }`}
+          className="hidden"
+          style={{ display: 'none' }}
         >
           <span className="relative flex h-2 w-2">
             {isAutoRenderingEnabled && (
@@ -209,8 +206,8 @@ export const AdminControlToolbar: React.FC<AdminControlToolbarProps> = ({
           </span>
         </button>
 
-        {/* Offline Sync State */}
-        <div className="shrink-0">
+        {/* Offline Sync State (Hidden per user request) */}
+        <div className="hidden shrink-0" style={{ display: 'none' }}>
           <OfflineSyncIndicator />
         </div>
 

@@ -59,16 +59,13 @@ export const OfflineSyncIndicator: React.FC = () => {
 
   return (
     <>
-      {/* Primary Header Status Indicator Pill */}
-      <div className="relative">
+      {/* Primary Header Status Indicator Pill (Hidden per user request) */}
+      <div className="relative hidden" style={{ display: 'none' }}>
         <button
           id="offline-sync-status-indicator"
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-semibold border transition-all cursor-pointer select-none ${
-            !isOnline
-              ? 'bg-red-600 text-white border-red-400 shadow-md shadow-red-900/30'
-              : 'bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-900/30'
-          }`}
+          className="hidden"
+          style={{ display: 'none' }}
           title="Automated Realtime Sync: Click to inspect offline sync buffer and database state"
         >
           {/* Status Icon */}

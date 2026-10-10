@@ -93,7 +93,7 @@ export const CompanyLogoWhitelabelView: React.FC<CompanyLogoWhitelabelViewProps>
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const state = storageService.getState();
   const activeUser = storageService.getActiveUser();
-  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const isSuperAdmin = activeUser?.role === 'SUPER_ADMIN';
   const activeTenant = storageService.getActiveTenant();
 
   // Multi-tenant state: Select which enterprise tenant to white-label

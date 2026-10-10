@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Wifi,
   WifiOff,
@@ -15,7 +15,8 @@ import {
   Sliders,
   ExternalLink,
   Zap,
-  Activity
+  Activity,
+  Monitor
 } from 'lucide-react';
 import { storageService } from '../../services/storageService';
 import { RealtimeSyncInfo, NavViewId } from '../../types';
@@ -23,11 +24,13 @@ import { RealtimeSyncInfo, NavViewId } from '../../types';
 interface SidebarSyncTabProps {
   isDark?: boolean;
   onSelectView?: (view: NavViewId) => void;
+  variant?: 'sidebar' | 'breadcrumb';
 }
 
 export const SidebarSyncTab: React.FC<SidebarSyncTabProps> = ({
   isDark = false,
   onSelectView,
+  variant = 'breadcrumb',
 }) => {
   const [syncInfo, setSyncInfo] = useState<RealtimeSyncInfo>(() =>
     storageService.getRealtimeSyncInfo()
@@ -38,6 +41,49 @@ export const SidebarSyncTab: React.FC<SidebarSyncTabProps> = ({
     text: string;
     type: 'success' | 'warning' | 'error';
   } | null>(null);
+
+  // Dynamic screen size tracking to render font size according to the size of the screen
+  const [screenSize, setScreenSize] = useState<{ width: number; height: number }>(() => {
+    if (typeof window !== 'undefined') {
+      return { width: window.innerWidth, height: window.innerHeight };
+    }
+    return { width: 1280, height: 800 };
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Compute exact responsive font sizes based on current screen size
+  const fontSizes = useMemo(() => {
+    const w = screenSize.width;
+    // Scale font sizes smoothly according to screen width (from compact 320px to ultrawide 2560px+)
+    const titlePx = Math.max(10.5, Math.min(15.5, 10 + (w / 1920) * 5.5));
+    const badgePx = Math.max(7.5, Math.min(11, 7.5 + (w / 1920) * 3.5));
+    const subtitlePx = Math.max(9, Math.min(13, 8.5 + (w / 1920) * 4.5));
+    const buttonPx = Math.max(8.5, Math.min(12, 8 + (w / 1920) * 4));
+    const footerPx = Math.max(8, Math.min(11, 7.5 + (w / 1920) * 3.5));
+    const metricPx = Math.max(11, Math.min(16, 10.5 + (w / 1920) * 5.5));
+
+    const screenTier =
+      w < 640 ? 'Mobile' : w < 768 ? 'Phablet' : w < 1024 ? 'Tablet' : w < 1440 ? 'Laptop' : 'Desktop 4K';
+
+    return {
+      title: `${titlePx.toFixed(1)}px`,
+      badge: `${badgePx.toFixed(1)}px`,
+      subtitle: `${subtitlePx.toFixed(1)}px`,
+      button: `${buttonPx.toFixed(1)}px`,
+      footer: `${footerPx.toFixed(1)}px`,
+      metric: `${metricPx.toFixed(1)}px`,
+      tier: screenTier,
+      width: w,
+      height: screenSize.height,
+    };
+  }, [screenSize.width, screenSize.height]);
 
   useEffect(() => {
     return storageService.subscribe(() => {
@@ -89,96 +135,86 @@ export const SidebarSyncTab: React.FC<SidebarSyncTabProps> = ({
   return (
     <>
       {/* ========================================================================= */}
-      {/* TOP OF SIDEMENU BAR: SYNC TAB                                            */}
+      {/* SYNC TAB (Breadcrumb Bar or Sidebar Menu)                                 */}
       {/* - RED when NO NETWORK                                                    */}
       {/* - GREEN when on REALTIME SYNC                                            */}
-      {/* - FONT SIZE scales responsively with screen size                         */}
       {/* ========================================================================= */}
-      <div id="sidemenu-top-sync-tab-container" className="p-2 sm:p-2.5 pb-0 shrink-0">
-        <div
-          id="sidebar-realtime-sync-tab"
-          role="button"
-          tabIndex={0}
-          onClick={() => setIsModalOpen(true)}
-          onKeyDown={(e) => e.key === 'Enter' && setIsModalOpen(true)}
-          className={`group relative overflow-hidden rounded-xl border-2 p-2.5 sm:p-3 shadow-md transition-all duration-200 cursor-pointer select-none ${
-            hasNoNetwork
-              ? /* VIBRANT RED TAB WHEN NO NETWORK */
-                'bg-gradient-to-r from-red-700 via-rose-600 to-red-800 border-red-400 text-white shadow-red-900/40 hover:from-red-600 hover:to-red-700 ring-2 ring-red-500/30'
-              : /* VIBRANT GREEN TAB WHEN ON REALTIME SYNC */
-                'bg-gradient-to-r from-emerald-700 via-green-600 to-teal-800 border-emerald-400 text-white shadow-emerald-900/40 hover:from-emerald-600 hover:to-teal-700 ring-2 ring-emerald-500/30'
-          }`}
-          title={
-            hasNoNetwork
-              ? 'NO NETWORK SIGN DETECTED: Click to inspect buffered sync queue'
-              : 'AUTOMATED REALTIME SYNC ACTIVE: Click to view database sync status'
-          }
-        >
-          {/* Subtle Ambient Pulse Flare */}
+      {variant === 'breadcrumb' ? (
+        <div id="sidemenu-top-sync-tab-container" className="shrink-0">
           <div
-            className={`absolute top-0 right-0 w-28 h-28 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10 ${
-              hasNoNetwork ? 'bg-red-400/30 animate-pulse' : 'bg-emerald-300/25 animate-pulse'
+            id="sidebar-realtime-sync-tab"
+            role="button"
+            tabIndex={0}
+            onClick={() => setIsModalOpen(true)}
+            onKeyDown={(e) => e.key === 'Enter' && setIsModalOpen(true)}
+            className={`group relative overflow-hidden rounded-xl border px-2.5 sm:px-3 py-1.5 shadow-xs transition-all duration-200 cursor-pointer select-none flex items-center gap-2 sm:gap-2.5 ${
+              hasNoNetwork
+                ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 border-red-300 text-white shadow-md shadow-red-950/20 hover:from-red-500 hover:to-red-600 ring-1 ring-red-400/50'
+                : 'bg-gradient-to-r from-emerald-600 via-green-600 to-teal-700 border-emerald-300 text-white shadow-md shadow-emerald-950/20 hover:from-emerald-500 hover:to-teal-600 ring-1 ring-emerald-400/50'
             }`}
-          />
+            title={
+              hasNoNetwork
+                ? 'NO NETWORK SIGN DETECTED: Click to inspect buffered sync queue'
+                : 'AUTOMATED REALTIME SYNC ACTIVE: Click to view database sync status'
+            }
+          >
+            {/* Subtle Ambient Pulse Flare */}
+            <div
+              className={`absolute top-0 right-0 w-20 h-20 rounded-full blur-xl pointer-events-none -mr-6 -mt-6 ${
+                hasNoNetwork ? 'bg-red-400/40 animate-pulse' : 'bg-emerald-300/35 animate-pulse'
+              }`}
+            />
 
-          <div className="relative z-10 flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-              {/* Dynamic Status Icon with Pulsing Ping Ring */}
+            <div className="relative z-10 flex items-center gap-2 min-w-0">
+              {/* Dynamic Status Icon with Pulsing Ping */}
               <div
-                className={`relative flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 shadow-sm border ${
+                className={`relative flex items-center justify-center w-6 h-6 rounded-lg shrink-0 border ${
                   hasNoNetwork
-                    ? 'bg-red-900/80 border-red-300/60 text-white ring-2 ring-red-400/50'
-                    : 'bg-emerald-900/80 border-emerald-300/60 text-white ring-2 ring-emerald-400/50'
+                    ? 'bg-red-900/90 border-red-200/80 text-white ring-1 ring-red-300/60'
+                    : 'bg-emerald-900/90 border-emerald-200/80 text-white ring-1 ring-emerald-300/60'
                 }`}
               >
                 {hasNoNetwork ? (
-                  <WifiOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-pulse" />
+                  <WifiOff className="w-3 h-3 text-white animate-pulse" />
                 ) : isSyncing ? (
-                  <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-spin" />
+                  <RefreshCw className="w-3 h-3 text-white animate-spin" />
                 ) : (
-                  <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                  <Database className="w-3 h-3 text-white" />
                 )}
-
-                {/* Pulsing Live Dot */}
-                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                <span className="absolute -top-1 -right-1 flex h-2 w-2">
                   <span
                     className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
                       hasNoNetwork ? 'bg-red-300' : 'bg-emerald-300'
                     }`}
                   />
                   <span
-                    className={`relative inline-flex rounded-full h-2.5 w-2.5 border border-white/60 ${
-                      hasNoNetwork ? 'bg-white' : 'bg-emerald-200'
+                    className={`relative inline-flex rounded-full h-2 w-2 border border-white/80 ${
+                      hasNoNetwork ? 'bg-white' : 'bg-emerald-100'
                     }`}
                   />
                 </span>
               </div>
 
-              {/* Responsive Text & Labels */}
-              <div className="min-w-0">
+              {/* Status Labels */}
+              <div className="min-w-0 text-left">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Title font scaling with screen size */}
-                  <span className="font-mono font-black uppercase tracking-wider text-white text-[11px] sm:text-xs md:text-sm lg:text-[13px] leading-tight drop-shadow-xs">
+                  <span className="font-mono font-black uppercase tracking-wider text-white text-[10.5px] sm:text-[11px] leading-tight drop-shadow-xs">
                     {hasNoNetwork ? 'NO NETWORK' : 'REALTIME SYNC'}
                   </span>
-
-                  {/* Badge font scaling with screen size */}
                   <span
-                    className={`font-mono font-bold uppercase rounded-full px-1.5 py-0.2 border text-[8px] sm:text-[9px] md:text-[10px] leading-tight ${
+                    className={`font-mono font-bold uppercase rounded-full px-1.5 py-0.2 text-[8.5px] border leading-tight ${
                       hasNoNetwork
-                        ? 'bg-red-950/60 border-red-300/60 text-red-100'
-                        : 'bg-emerald-950/60 border-emerald-300/60 text-emerald-100'
+                        ? 'bg-red-950/70 border-red-200/80 text-red-100'
+                        : 'bg-emerald-950/70 border-emerald-200/80 text-emerald-100'
                     }`}
                   >
                     {hasNoNetwork ? 'SYNC TAB' : 'AUTOMATED'}
                   </span>
                 </div>
-
-                {/* Subtitle font scaling with screen size */}
-                <p className="font-medium text-white/90 leading-tight mt-0.5 truncate text-[9px] sm:text-[10px] md:text-[11px] lg:text-xs">
+                <p className="text-[10px] font-medium text-white/95 leading-tight truncate drop-shadow-2xs">
                   {hasNoNetwork
                     ? syncInfo.pendingCount > 0
-                      ? `${syncInfo.pendingCount} change${syncInfo.pendingCount === 1 ? '' : 's'} queued locally`
+                      ? `${syncInfo.pendingCount} queued locally`
                       : 'Local buffer active'
                     : isSyncing
                     ? 'Syncing to database...'
@@ -194,43 +230,166 @@ export const SidebarSyncTab: React.FC<SidebarSyncTabProps> = ({
                 e.stopPropagation();
                 setIsModalOpen(true);
               }}
-              className={`shrink-0 rounded-lg font-bold border transition flex items-center gap-1 cursor-pointer px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] md:text-xs ${
+              className={`relative z-10 shrink-0 rounded-md font-bold border transition flex items-center gap-1 cursor-pointer px-1.5 py-0.5 text-[10px] shadow-xs ${
                 hasNoNetwork
-                  ? 'bg-red-900/60 hover:bg-red-900 text-white border-red-300/60'
-                  : 'bg-emerald-900/60 hover:bg-emerald-900 text-white border-emerald-300/60'
+                  ? 'bg-red-950/70 hover:bg-red-900 text-white border-red-200/70'
+                  : 'bg-emerald-950/70 hover:bg-emerald-900 text-white border-emerald-200/70'
               }`}
               title="Open Realtime Database Sync Details"
             >
               <span>OPEN</span>
-              <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
-
-          {/* Quick Informational Bottom Strip */}
+        </div>
+      ) : (
+        <div id="sidemenu-top-sync-tab-container" className="p-2 sm:p-2.5 pb-0 shrink-0">
           <div
-            className={`mt-2 pt-1.5 border-t flex items-center justify-between text-white/80 text-[8px] sm:text-[9px] md:text-[10px] ${
-              hasNoNetwork ? 'border-red-400/40' : 'border-emerald-400/40'
+            id="sidebar-realtime-sync-tab"
+            role="button"
+            tabIndex={0}
+            onClick={() => setIsModalOpen(true)}
+            onKeyDown={(e) => e.key === 'Enter' && setIsModalOpen(true)}
+            className={`group relative overflow-hidden rounded-xl border-2 p-2.5 sm:p-3 shadow-md transition-all duration-200 cursor-pointer select-none ${
+              hasNoNetwork
+                ? /* VIBRANT RED TAB WHEN NO NETWORK */
+                  'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 border-red-300 text-white shadow-lg shadow-red-950/40 hover:from-red-500 hover:to-red-600 ring-2 ring-red-400/50'
+                : /* VIBRANT GREEN TAB WHEN ON REALTIME SYNC */
+                  'bg-gradient-to-r from-emerald-600 via-green-600 to-teal-700 border-emerald-300 text-white shadow-lg shadow-emerald-950/40 hover:from-emerald-500 hover:to-teal-600 ring-2 ring-emerald-400/50'
             }`}
+            title={
+              hasNoNetwork
+                ? 'NO NETWORK SIGN DETECTED: Click to inspect buffered sync queue'
+                : 'AUTOMATED REALTIME SYNC ACTIVE: Click to view database sync status'
+            }
           >
-            <span className="flex items-center gap-1 truncate">
-              {hasNoNetwork ? (
-                <>
-                  <AlertTriangle className="w-2.5 h-2.5 text-white shrink-0" />
-                  <span className="truncate">Will auto-sync on reconnect</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-200 shrink-0" />
-                  <span className="truncate">PostgreSQL db.eonmoodozhicjlgnmzkx</span>
-                </>
-              )}
-            </span>
-            <span className="font-mono font-bold text-white shrink-0 ml-1">
-              {hasNoNetwork ? 'OFFLINE' : 'ONLINE'}
-            </span>
+            {/* Subtle Ambient Pulse Flare */}
+            <div
+              className={`absolute top-0 right-0 w-28 h-28 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10 ${
+                hasNoNetwork ? 'bg-red-400/40 animate-pulse' : 'bg-emerald-300/35 animate-pulse'
+              }`}
+            />
+
+            <div className="relative z-10 flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                {/* Dynamic Status Icon with Pulsing Ping Ring */}
+                <div
+                  className={`relative flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg shrink-0 shadow-sm border ${
+                    hasNoNetwork
+                      ? 'bg-red-900/90 border-red-200/80 text-white ring-2 ring-red-300/60'
+                      : 'bg-emerald-900/90 border-emerald-200/80 text-white ring-2 ring-emerald-300/60'
+                  }`}
+                >
+                  {hasNoNetwork ? (
+                    <WifiOff className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-pulse" />
+                  ) : isSyncing ? (
+                    <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white animate-spin" />
+                  ) : (
+                    <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                  )}
+
+                  {/* Pulsing Live Dot */}
+                  <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                        hasNoNetwork ? 'bg-red-300' : 'bg-emerald-300'
+                      }`}
+                    />
+                    <span
+                      className={`relative inline-flex rounded-full h-2.5 w-2.5 border border-white/80 ${
+                        hasNoNetwork ? 'bg-white' : 'bg-emerald-100'
+                      }`}
+                    />
+                  </span>
+                </div>
+
+                {/* Responsive Text & Labels - dynamically rendered font size according to screen size */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Title font scaling dynamically with screen size */}
+                    <span
+                      style={{ fontSize: fontSizes.title }}
+                      className="font-mono font-black uppercase tracking-wider text-white leading-tight drop-shadow-xs"
+                    >
+                      {hasNoNetwork ? 'NO NETWORK' : 'REALTIME SYNC'}
+                    </span>
+
+                    {/* Badge font scaling dynamically with screen size */}
+                    <span
+                      style={{ fontSize: fontSizes.badge }}
+                      className={`font-mono font-bold uppercase rounded-full px-1.5 py-0.2 border leading-tight ${
+                        hasNoNetwork
+                          ? 'bg-red-950/70 border-red-200/80 text-red-100'
+                          : 'bg-emerald-950/70 border-emerald-200/80 text-emerald-100'
+                      }`}
+                    >
+                      {hasNoNetwork ? 'SYNC TAB' : 'AUTOMATED'}
+                    </span>
+                  </div>
+
+                  {/* Subtitle font scaling dynamically with screen size */}
+                  <p
+                    style={{ fontSize: fontSizes.subtitle }}
+                    className="font-medium text-white/95 leading-tight mt-0.5 truncate drop-shadow-2xs"
+                  >
+                    {hasNoNetwork
+                      ? syncInfo.pendingCount > 0
+                        ? `${syncInfo.pendingCount} change${syncInfo.pendingCount === 1 ? '' : 's'} queued locally`
+                        : 'Local buffer active'
+                      : isSyncing
+                      ? 'Syncing to database...'
+                      : 'Auto-sync active (15s loop)'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Trigger Button */}
+              <button
+                type="button"
+                style={{ fontSize: fontSizes.button }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsModalOpen(true);
+                }}
+                className={`shrink-0 rounded-lg font-bold border transition flex items-center gap-1 cursor-pointer px-1.5 sm:px-2 py-1 shadow-xs ${
+                  hasNoNetwork
+                    ? 'bg-red-950/70 hover:bg-red-900 text-white border-red-200/70'
+                    : 'bg-emerald-950/70 hover:bg-emerald-900 text-white border-emerald-200/70'
+                }`}
+                title="Open Realtime Database Sync Details"
+              >
+                <span>OPEN</span>
+                <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
+
+            {/* Quick Informational Bottom Strip */}
+            <div
+              style={{ fontSize: fontSizes.footer }}
+              className={`mt-2 pt-1.5 border-t flex items-center justify-between text-white/90 ${
+                hasNoNetwork ? 'border-red-400/50' : 'border-emerald-400/50'
+              }`}
+            >
+              <span className="flex items-center gap-1 truncate">
+                {hasNoNetwork ? (
+                  <>
+                    <AlertTriangle className="w-2.5 h-2.5 text-white shrink-0" />
+                    <span className="truncate">Auto-syncs on reconnect</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-100 shrink-0" />
+                    <span className="truncate">PostgreSQL db.eonmoodozhicjlgnmzkx</span>
+                  </>
+                )}
+              </span>
+              <span className="font-mono font-bold text-white shrink-0 ml-1">
+                {hasNoNetwork ? 'OFFLINE (RED)' : 'ONLINE (GREEN)'}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ========================================================================= */}
       {/* REALTIME DATABASE SYNC MODAL / DIAGNOSTIC CONSOLE                        */}
@@ -397,6 +556,24 @@ export const SidebarSyncTab: React.FC<SidebarSyncTabProps> = ({
                       ? new Date(syncInfo.lastSyncedAt).toLocaleTimeString()
                       : 'Just now'}
                   </div>
+                </div>
+              </div>
+
+              {/* Screen Size Responsive Typography Diagnostics */}
+              <div className="bg-slate-100/90 border border-slate-200 rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <Monitor className="w-4 h-4 text-teal-600 shrink-0" />
+                  <div>
+                    <span className="font-bold text-slate-800">
+                      Screen-Size Responsive Typography:
+                    </span>{' '}
+                    <span className="text-slate-600">
+                      {fontSizes.tier} tier ({fontSizes.width}×{fontSizes.height}px)
+                    </span>
+                  </div>
+                </div>
+                <div className="font-mono text-[10px] sm:text-xs text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                  Font Scale: {fontSizes.title} / {fontSizes.subtitle}
                 </div>
               </div>
 

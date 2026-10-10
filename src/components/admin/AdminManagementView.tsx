@@ -1844,7 +1844,7 @@ export const AdminManagementView: React.FC<AdminManagementViewProps> = ({
             <div>
               <h3 className="text-base font-bold text-[#172B3A]">Restricted: Platform Super Admin Clearance Required</h3>
               <p className="text-xs text-[#526575] max-w-md mx-auto mt-1">
-                Visitor Pass Format Designer & Thermal Label Customiser is restricted exclusively to <strong>Platform Super Admin (Tier 0)</strong> clearance. Your active session role is <strong>{activeUser?.role.replace(/_/g, ' ')}</strong>.
+                Visitor Pass Format Designer & Thermal Label Customiser is restricted exclusively to <strong>Super Admin (Tier 0)</strong> clearance. Your active session role is <strong>{activeUser?.role.replace(/_/g, ' ')}</strong>.
               </p>
             </div>
             <div className="pt-2">

@@ -387,8 +387,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
       {/* Footer System Status */}
       <div className="max-w-6xl mx-auto w-full pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
-        <div className="flex items-center gap-2">
-          <span>JS AlphaSoft VMS Enterprise v2026.09</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span>JS Alphasoft Private Limited</span>
+          <span>•</span>
+          <a href="mailto:info@jsalphasoft.com" className="text-teal-400 hover:underline">info@jsalphasoft.com</a>
           <span>•</span>
           <span>Zero-Trust PostgreSQL DB: <span className="text-emerald-400">HEALTHY</span></span>
         </div>

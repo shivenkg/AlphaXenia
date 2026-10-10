@@ -33,7 +33,6 @@ import {
 import { storageService } from '../../services/storageService';
 import { NavViewId, UserRole } from '../../types';
 import { getGlobalThemeMode } from '../../utils/themeApplier';
-import { SidebarSyncTab } from './SidebarSyncTab';
 
 interface SidebarProps {
   currentView: NavViewId;
@@ -385,51 +384,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           : '-translate-x-full opacity-0 pointer-events-none'
       }`}
     >
-      {/* Top of Sidemenu Bar: Realtime Database Sync Tab */}
-      <SidebarSyncTab isDark={isDark} onSelectView={onSelectView} />
-
-      {/* Active Persona Identity Header */}
-      <div className={`p-3.5 border-b shrink-0 ${
+      {/* Navigation Menu Header Bar */}
+      <div className={`px-3.5 py-3 border-b flex items-center justify-between shrink-0 ${
         isDark
-          ? 'border-sky-500/40 bg-gradient-to-b from-[#0F335C] to-[#0B2544]'
-          : 'border-[#E2E8F0] bg-gradient-to-b from-[#F8FAFC] to-white'
+          ? 'border-sky-500/30 bg-[#0F335C]/60 text-sky-200'
+          : 'border-[#E2E8F0] bg-slate-50/80 text-slate-700'
       }`}>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shadow-xs shrink-0 ring-2 ${
-              isDark
-                ? 'bg-gradient-to-br from-sky-400 to-sky-600 text-slate-950 ring-sky-400/40'
-                : 'bg-gradient-to-br from-[#123B5D] to-[#0F766E] text-white ring-teal-500/20'
-            }`}>
-              {activeUser.name.charAt(0)}
-            </div>
-            <div className="min-w-0">
-              <div className={`font-bold leading-snug truncate text-xs sm:text-[13px] md:text-sm ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}>
-                {activeUser.name}
-              </div>
-              <div className={`inline-flex items-center font-semibold px-2 py-0.5 rounded-full mt-0.5 border text-[9px] sm:text-[10px] ${
-                isDark
-                  ? 'text-sky-200 bg-sky-900/60 border-sky-400/40'
-                  : 'text-teal-800 bg-teal-50 border-teal-200/80'
-              }`}>
-                <span>{storageService.getRoleLabel(role)}</span>
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider">
+            Navigation Menu
+          </span>
         </div>
-
-        <div className={`mt-2.5 pt-2 border-t flex items-center justify-between text-[10px] sm:text-[11px] ${
-          isDark ? 'border-sky-800/60 text-sky-300' : 'border-slate-100 text-slate-500'
+        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+          isDark ? 'bg-sky-950/60 border-sky-400/30 text-sky-300' : 'bg-white border-slate-200 text-slate-500'
         }`}>
-          <span className="truncate">
-            ID: <strong className={`font-mono font-semibold ${isDark ? 'text-sky-200' : 'text-[#123B5D]'}`}>{activeUser.loginId}</strong>
-          </span>
-          <span className={`font-mono text-[9px] sm:text-[10px] ${isDark ? 'text-sky-400' : 'text-slate-400'}`}>
-            {activeUser.departmentName || 'Enterprise'}
-          </span>
-        </div>
+          {sections.length} Functions
+        </span>
       </div>
 
       {/* Navigation Sections (Collapsible on Hover & Click) */}

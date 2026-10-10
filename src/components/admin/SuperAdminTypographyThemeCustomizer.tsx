@@ -74,7 +74,7 @@ export const SuperAdminTypographyThemeCustomizer: React.FC<SuperAdminTypographyT
   tenantId,
 }) => {
   const activeUser = storageService.getActiveUser();
-  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const isSuperAdmin = activeUser?.role === 'SUPER_ADMIN';
   const effectiveTenantId = tenantId || storageService.getActiveTenant().id;
   const targetTenant =
     storageService.getState().tenants.find((t) => t.id === effectiveTenantId) ||

@@ -46,7 +46,7 @@ export async function generateVisitorPassPdf(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(180, 220, 240);
-  doc.text('JS ALPHASOFT ENTERPRISE VMS • VISITOR SECURITY PASS', 50, 16.5, { align: 'center' });
+  doc.text('JS ALPHASOFT PRIVATE LIMITED • VISITOR SECURITY PASS', 50, 16.5, { align: 'center' });
 
   // Category Pill inside header
   doc.setFillColor(15, 118, 110); // #0F766E Teal

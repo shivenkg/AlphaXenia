@@ -47,7 +47,7 @@ export const SaaSLicenseEngineView: React.FC<SaaSLicenseEngineViewProps> = ({
 }) => {
   const state = storageService.getState();
   const activeUser = storageService.getActiveUser();
-  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const isSuperAdmin = activeUser?.role === 'SUPER_ADMIN';
 
   const [license, setLicense] = useState<SaaSLicenseRecord>(() => storageService.getSaaSLicense());
   const [copiedKey, setCopiedKey] = useState(false);

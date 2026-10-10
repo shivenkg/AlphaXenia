@@ -141,15 +141,15 @@ CREATE SCHEMA IF NOT EXISTS tenant_data;
 -- 1. Tenants (Global & Multi-Tenant Registry)
 CREATE TABLE IF NOT EXISTS public.tenants (
     id VARCHAR(64) PRIMARY KEY,
-    code VARCHAR(32) NOT NULL UNIQUE,
+    code VARCHAR(64) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
-    tier VARCHAR(32) NOT NULL DEFAULT 'ENTERPRISE_PREMIUM',
-    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    tier VARCHAR(64) NOT NULL DEFAULT 'ENTERPRISE_PREMIUM',
+    status VARCHAR(64) NOT NULL DEFAULT 'ACTIVE',
     timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Kolkata',
-    locale VARCHAR(16) NOT NULL DEFAULT 'en-IN',
+    locale VARCHAR(32) NOT NULL DEFAULT 'en-IN',
     database_ref VARCHAR(128) NOT NULL,
-    database_health VARCHAR(32) NOT NULL DEFAULT 'HEALTHY',
-    migration_version VARCHAR(32) NOT NULL DEFAULT '2026.09.v14',
+    database_health VARCHAR(64) NOT NULL DEFAULT 'HEALTHY',
+    migration_version VARCHAR(64) NOT NULL DEFAULT '2026.09.v14',
     retention_days INT NOT NULL DEFAULT 365,
     features JSONB NOT NULL DEFAULT '{}',
     branding JSONB NOT NULL DEFAULT '{}',
@@ -163,10 +163,10 @@ CREATE TABLE IF NOT EXISTS public.sites (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    code VARCHAR(32) NOT NULL,
+    code VARCHAR(64) NOT NULL,
     timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Kolkata',
     address TEXT NOT NULL,
-    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    status VARCHAR(64) NOT NULL DEFAULT 'ACTIVE',
     visitor_policy TEXT,
     requires_host_approval BOOLEAN NOT NULL DEFAULT TRUE,
     requires_security_approval BOOLEAN NOT NULL DEFAULT FALSE,
@@ -179,8 +179,8 @@ CREATE TABLE IF NOT EXISTS public.building_zones (
     id VARCHAR(64) PRIMARY KEY,
     site_id VARCHAR(64) NOT NULL REFERENCES public.sites(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    code VARCHAR(32) NOT NULL,
-    security_level VARCHAR(32) NOT NULL DEFAULT 'LOW',
+    code VARCHAR(64) NOT NULL,
+    security_level VARCHAR(64) NOT NULL DEFAULT 'LOW',
     muster_point VARCHAR(255) NOT NULL,
     max_capacity INT NOT NULL DEFAULT 150,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -191,9 +191,9 @@ CREATE TABLE IF NOT EXISTS public.gates (
     id VARCHAR(64) PRIMARY KEY,
     site_id VARCHAR(64) NOT NULL REFERENCES public.sites(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    code VARCHAR(32) NOT NULL,
-    type VARCHAR(32) NOT NULL DEFAULT 'BIDIRECTIONAL',
-    operating_status VARCHAR(32) NOT NULL DEFAULT 'OPEN',
+    code VARCHAR(64) NOT NULL,
+    type VARCHAR(64) NOT NULL DEFAULT 'BIDIRECTIONAL',
+    operating_status VARCHAR(64) NOT NULL DEFAULT 'OPEN',
     assigned_printer_id VARCHAR(64),
     assigned_terminal_id VARCHAR(64),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS public.departments (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    code VARCHAR(32) NOT NULL,
+    code VARCHAR(64) NOT NULL,
     lead_approver_id VARCHAR(64),
     lead_approver_name VARCHAR(255),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -218,14 +218,14 @@ CREATE TABLE IF NOT EXISTS public.app_users (
     login_id VARCHAR(64) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(32) NOT NULL,
-    role VARCHAR(32) NOT NULL,
+    phone_number VARCHAR(64) NOT NULL,
+    role VARCHAR(64) NOT NULL,
     department_id VARCHAR(64),
     department_name VARCHAR(255),
     site_scopes JSONB NOT NULL DEFAULT '["*"]',
     gate_scopes JSONB NOT NULL DEFAULT '["*"]',
     mfa_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    status VARCHAR(64) NOT NULL DEFAULT 'ACTIVE',
     last_login_at TIMESTAMPTZ,
     notification_settings JSONB NOT NULL DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -237,16 +237,16 @@ CREATE TABLE IF NOT EXISTS public.visitors (
     tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(32) NOT NULL,
+    phone_number VARCHAR(64) NOT NULL,
     company VARCHAR(255) NOT NULL,
-    category VARCHAR(32) NOT NULL DEFAULT 'BUSINESS_GUEST',
-    document_type VARCHAR(32) NOT NULL DEFAULT 'NATIONAL_ID',
+    category VARCHAR(64) NOT NULL DEFAULT 'BUSINESS_GUEST',
+    document_type VARCHAR(64) NOT NULL DEFAULT 'NATIONAL_ID',
     masked_document_number VARCHAR(64) NOT NULL,
     consent_signed BOOLEAN NOT NULL DEFAULT TRUE,
     consent_signed_at TIMESTAMPTZ,
     nda_signed BOOLEAN NOT NULL DEFAULT FALSE,
     photo_url TEXT,
-    watchlist_status VARCHAR(32) NOT NULL DEFAULT 'CLEAN',
+    watchlist_status VARCHAR(64) NOT NULL DEFAULT 'CLEAN',
     total_visits INT NOT NULL DEFAULT 1,
     last_visit_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS public.visits (
     scheduled_end TIMESTAMPTZ NOT NULL,
     actual_check_in TIMESTAMPTZ,
     actual_check_out TIMESTAMPTZ,
-    state VARCHAR(32) NOT NULL DEFAULT 'SCHEDULED',
+    state VARCHAR(64) NOT NULL DEFAULT 'SCHEDULED',
     state_reason TEXT,
     pass_token VARCHAR(128) NOT NULL UNIQUE,
     pass_token_expires_at TIMESTAMPTZ NOT NULL,
@@ -282,12 +282,12 @@ CREATE TABLE IF NOT EXISTS public.badge_templates (
     id VARCHAR(64) PRIMARY KEY,
     tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    type VARCHAR(32) NOT NULL DEFAULT 'THERMAL_ROLL',
+    type VARCHAR(64) NOT NULL DEFAULT 'THERMAL_ROLL',
     width_mm NUMERIC(6,2) NOT NULL DEFAULT 54.00,
     height_mm NUMERIC(6,2) NOT NULL DEFAULT 86.00,
     show_photo BOOLEAN NOT NULL DEFAULT TRUE,
     show_qr_code BOOLEAN NOT NULL DEFAULT TRUE,
-    header_background VARCHAR(32) NOT NULL DEFAULT '#123B5D',
+    header_background VARCHAR(64) NOT NULL DEFAULT '#123B5D',
     instructions TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -303,7 +303,7 @@ CREATE TABLE IF NOT EXISTS public.badge_print_jobs (
     gate_id VARCHAR(64),
     printer_id VARCHAR(64),
     printer_name VARCHAR(255),
-    status VARCHAR(32) NOT NULL DEFAULT 'COMPLETED',
+    status VARCHAR(64) NOT NULL DEFAULT 'COMPLETED',
     retry_count INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
@@ -318,10 +318,10 @@ CREATE TABLE IF NOT EXISTS public.hardware_devices (
     site_id VARCHAR(64) NOT NULL REFERENCES public.sites(id),
     gate_id VARCHAR(64) REFERENCES public.gates(id),
     name VARCHAR(255) NOT NULL,
-    type VARCHAR(32) NOT NULL,
+    type VARCHAR(64) NOT NULL,
     ip_address VARCHAR(64) NOT NULL,
     port INT NOT NULL DEFAULT 9100,
-    status VARCHAR(32) NOT NULL DEFAULT 'ONLINE',
+    status VARCHAR(64) NOT NULL DEFAULT 'ONLINE',
     model VARCHAR(128) NOT NULL,
     last_ping_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -334,7 +334,7 @@ CREATE TABLE IF NOT EXISTS public.audit_events (
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     actor_id VARCHAR(64) NOT NULL,
     actor_name VARCHAR(255) NOT NULL,
-    actor_role VARCHAR(32) NOT NULL,
+    actor_role VARCHAR(64) NOT NULL,
     action VARCHAR(64) NOT NULL,
     entity_type VARCHAR(64) NOT NULL,
     entity_id VARCHAR(64) NOT NULL,
@@ -352,7 +352,7 @@ CREATE TABLE IF NOT EXISTS public.edge_sync_events (
     payload JSONB NOT NULL DEFAULT '{}',
     captured_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     synced_at TIMESTAMPTZ,
-    status VARCHAR(32) NOT NULL DEFAULT 'SYNCED',
+    status VARCHAR(64) NOT NULL DEFAULT 'SYNCED',
     hash VARCHAR(128)
 );
 
@@ -365,7 +365,7 @@ CREATE TABLE IF NOT EXISTS public.uat_test_cases (
     preconditions TEXT,
     test_steps JSONB NOT NULL DEFAULT '[]',
     expected_result TEXT,
-    status VARCHAR(32) NOT NULL DEFAULT 'PASSED'
+    status VARCHAR(64) NOT NULL DEFAULT 'PASSED'
 );
 
 -- 15. SaaS License Records
@@ -374,8 +374,8 @@ CREATE TABLE IF NOT EXISTS public.saas_licenses (
     license_key VARCHAR(128) NOT NULL UNIQUE,
     tenant_id VARCHAR(64) NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
     tenant_name VARCHAR(255) NOT NULL,
-    tier VARCHAR(32) NOT NULL DEFAULT 'ENTERPRISE',
-    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    tier VARCHAR(64) NOT NULL DEFAULT 'ENTERPRISE',
+    status VARCHAR(64) NOT NULL DEFAULT 'ACTIVE',
     issued_to VARCHAR(255) NOT NULL,
     issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
@@ -391,10 +391,10 @@ CREATE TABLE IF NOT EXISTS public.whitelabel_brandings (
     company_name VARCHAR(255) NOT NULL,
     portal_title VARCHAR(255) NOT NULL,
     tagline TEXT,
-    primary_color VARCHAR(32) NOT NULL DEFAULT '#123B5D',
-    secondary_color VARCHAR(32),
-    font_family VARCHAR(64) NOT NULL DEFAULT 'Inter, sans-serif',
-    header_background VARCHAR(32) NOT NULL DEFAULT 'DARK_NAVY',
+    primary_color VARCHAR(64) NOT NULL DEFAULT '#123B5D',
+    secondary_color VARCHAR(64),
+    font_family VARCHAR(128) NOT NULL DEFAULT 'Inter, sans-serif',
+    header_background VARCHAR(64) NOT NULL DEFAULT 'DARK_NAVY',
     config JSONB NOT NULL DEFAULT '{}',
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -404,8 +404,8 @@ CREATE TABLE IF NOT EXISTS public.role_definitions (
     id VARCHAR(64) PRIMARY KEY,
     label VARCHAR(255) NOT NULL,
     description TEXT,
-    badge_color VARCHAR(32) NOT NULL DEFAULT 'blue',
-    security_tier VARCHAR(32) NOT NULL DEFAULT 'TIER_1',
+    badge_color VARCHAR(255) NOT NULL DEFAULT 'blue',
+    security_tier VARCHAR(128) NOT NULL DEFAULT 'TIER_1',
     is_system_role BOOLEAN NOT NULL DEFAULT FALSE,
     permissions JSONB NOT NULL DEFAULT '[]',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -418,12 +418,12 @@ CREATE TABLE IF NOT EXISTS public.google_sheet_configs (
     spreadsheet_id VARCHAR(255) NOT NULL,
     spreadsheet_url TEXT,
     sheet_name VARCHAR(255) NOT NULL DEFAULT 'Visitor_Log_2026',
-    sync_mode VARCHAR(32) NOT NULL DEFAULT 'REALTIME_CHECKIN',
+    sync_mode VARCHAR(64) NOT NULL DEFAULT 'REALTIME_CHECKIN',
     auto_sync_on_check_in BOOLEAN NOT NULL DEFAULT TRUE,
     auto_sync_on_check_out BOOLEAN NOT NULL DEFAULT TRUE,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     last_synced_at TIMESTAMPTZ,
-    sync_status VARCHAR(32) NOT NULL DEFAULT 'CONNECTED'
+    sync_status VARCHAR(64) NOT NULL DEFAULT 'CONNECTED'
 );
 
 -- 19. Database Connection & Migration Audit Logs
@@ -433,9 +433,53 @@ CREATE TABLE IF NOT EXISTS public.database_audit_logs (
     action VARCHAR(64) NOT NULL,
     performed_by VARCHAR(255) NOT NULL,
     details TEXT,
-    status VARCHAR(32) NOT NULL DEFAULT 'SUCCESS',
+    status VARCHAR(64) NOT NULL DEFAULT 'SUCCESS',
     latency_ms INT
 );
+
+-- Backward-compatibility Column Wideners for pre-existing tables
+DO $$
+BEGIN
+    -- Role definitions widen badge_color & security_tier
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'role_definitions') THEN
+        ALTER TABLE public.role_definitions ALTER COLUMN badge_color TYPE VARCHAR(255);
+        ALTER TABLE public.role_definitions ALTER COLUMN security_tier TYPE VARCHAR(128);
+    END IF;
+    -- Users widen role & phone_number
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_users') THEN
+        ALTER TABLE public.app_users ALTER COLUMN role TYPE VARCHAR(64);
+        ALTER TABLE public.app_users ALTER COLUMN phone_number TYPE VARCHAR(64);
+        ALTER TABLE public.app_users ALTER COLUMN status TYPE VARCHAR(64);
+    END IF;
+    -- Audit events widen actor_role
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'audit_events') THEN
+        ALTER TABLE public.audit_events ALTER COLUMN actor_role TYPE VARCHAR(64);
+    END IF;
+    -- Whitelabel branding widen colors & font_family
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'whitelabel_brandings') THEN
+        ALTER TABLE public.whitelabel_brandings ALTER COLUMN primary_color TYPE VARCHAR(64);
+        ALTER TABLE public.whitelabel_brandings ALTER COLUMN secondary_color TYPE VARCHAR(64);
+        ALTER TABLE public.whitelabel_brandings ALTER COLUMN font_family TYPE VARCHAR(128);
+        ALTER TABLE public.whitelabel_brandings ALTER COLUMN header_background TYPE VARCHAR(64);
+    END IF;
+    -- Tenants widen tier, status, health
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tenants') THEN
+        ALTER TABLE public.tenants ALTER COLUMN tier TYPE VARCHAR(64);
+        ALTER TABLE public.tenants ALTER COLUMN status TYPE VARCHAR(64);
+        ALTER TABLE public.tenants ALTER COLUMN database_health TYPE VARCHAR(64);
+    END IF;
+    -- Visitors widen phone, category, doc_type
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'visitors') THEN
+        ALTER TABLE public.visitors ALTER COLUMN phone_number TYPE VARCHAR(64);
+        ALTER TABLE public.visitors ALTER COLUMN category TYPE VARCHAR(64);
+        ALTER TABLE public.visitors ALTER COLUMN document_type TYPE VARCHAR(64);
+        ALTER TABLE public.visitors ALTER COLUMN watchlist_status TYPE VARCHAR(64);
+    END IF;
+    -- Visits widen state
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'visits') THEN
+        ALTER TABLE public.visits ALTER COLUMN state TYPE VARCHAR(64);
+    END IF;
+END $$;
 
 -- Indexes for Optimal Query Performance
 CREATE INDEX IF NOT EXISTS idx_sites_tenant ON public.sites(tenant_id);
@@ -1012,6 +1056,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_tenant ON public.audit_events(tenant_id);
           VALUES ($1, $2, $3, $4, $5, $6, $7)
           ON CONFLICT (id) DO UPDATE SET
             label = EXCLUDED.label,
+            badge_color = EXCLUDED.badge_color,
+            security_tier = EXCLUDED.security_tier,
             permissions = EXCLUDED.permissions;
         `,
           [
@@ -1272,7 +1318,7 @@ ON CONFLICT (id) DO UPDATE SET company_name = EXCLUDED.company_name, updated_at 
       for (const rd of roleDefinitions) {
         sql += `INSERT INTO public.role_definitions (id, label, description, badge_color, security_tier, is_system_role, permissions)
 VALUES (${escapeSql(rd.id)}, ${escapeSql(rd.label)}, ${escapeSql(rd.description)}, ${escapeSql(rd.badgeColor)}, ${escapeSql(rd.securityTier)}, ${Boolean(rd.isSystemRole)}, ${escapeJson(rd.permissions)})
-ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, permissions = EXCLUDED.permissions;\n`;
+ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, badge_color = EXCLUDED.badge_color, security_tier = EXCLUDED.security_tier, permissions = EXCLUDED.permissions;\n`;
       }
     }
 

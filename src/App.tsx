@@ -4,6 +4,7 @@ import { storageService } from './services/storageService';
 import { NavViewId, Visit, VisitorProfile, AppUser, UserRole } from './types';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
+import { BreadcrumbMenu } from './components/layout/BreadcrumbMenu';
 import { LoginView } from './components/auth/LoginView';
 import { AdminManagementView } from './components/admin/AdminManagementView';
 import { SaaSLicenseEngineView } from './components/admin/SaaSLicenseEngineView';
@@ -73,17 +74,9 @@ export default function App() {
       if (params.get('view') === 'login' || window.location.hash.includes('login')) {
         return 'login';
       }
-      if (params.get('view') === 'landing' || window.location.hash.includes('landing')) {
-        return 'landing';
-      }
     }
-    const hasAuth = storageService.isAuthenticated();
-    if (!hasAuth) {
-      return 'landing';
-    }
-    const active = storageService.getActiveUser();
-    const role = active?.role || 'RECEPTIONIST';
-    return isSuperAdminRole(role) ? 'user_management' : getAutoRenderViewForRole(role);
+    // REQUIREMENT 4: On launch it should always start from product showcase landing page
+    return 'landing';
   });
 
   const [selectedVisitForBadge, setSelectedVisitForBadge] = useState<Visit | null>(null);
@@ -329,28 +322,14 @@ export default function App() {
     );
   }
 
-  // If authenticated and explicitly chose to view product landing page
+  // If authenticated and on product landing page
   if (currentView === 'landing') {
     return (
-      <div className="min-h-screen flex flex-col">
-        <div className="bg-[#0F2942] text-teal-200 text-xs py-2 px-4 flex items-center justify-between border-b border-white/10 z-50">
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span>Signed in as <strong>{activeUser.name}</strong> ({storageService.getRoleLabel(activeRole)})</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => setCurrentView(isSuperAdmin ? 'user_management' : getAutoRenderViewForRole(activeRole))}
-            className="px-3 py-1 rounded-lg bg-teal-500 hover:bg-teal-400 text-[#0A1927] font-bold text-xs transition cursor-pointer"
-          >
-            ← Return to Workspace
-          </button>
-        </div>
-        <ProductLandingView
-          onNavigateToLogin={() => setCurrentView(isSuperAdmin ? 'user_management' : getAutoRenderViewForRole(activeRole))}
-          onNavigateToPublicPreRegister={() => setCurrentView('pre_register')}
-        />
-      </div>
+      <ProductLandingView
+        onNavigateToLogin={() => setCurrentView(isSuperAdmin ? 'user_management' : getAutoRenderViewForRole(activeRole))}
+        onNavigateToPublicPreRegister={() => setCurrentView('pre_register')}
+        onLaunchDemoReception={() => setCurrentView(isSuperAdmin ? 'user_management' : getAutoRenderViewForRole(activeRole))}
+      />
     );
   }
 
@@ -439,6 +418,12 @@ export default function App() {
         >
           {/* Responsive auto-adjust inner container ensuring perfect center alignment on all screen sizes */}
           <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col">
+            {/* Breadcrumb Menu Bar with Realtime Database Sync Tab and Active Persona Identity */}
+            <BreadcrumbMenu
+              currentView={currentView}
+              onNavigate={(view) => setCurrentView(view)}
+            />
+
             {/* Enterprise Inactivity Warning Banner (approaching 30-min idle timeout) */}
             {isIdleWarning && (
               <div
@@ -465,82 +450,7 @@ export default function App() {
               </div>
             )}
 
-            {/* View Toolbar: Polling Toggle Switch + Subtle 'Refresh View' Button */}
-            <div className="flex items-center justify-end gap-2 sm:gap-2.5 mb-2.5 -mt-2">
-            {/* Auto-Polling Toggle specifically for the current view */}
-            <div
-              id="view-auto-poll-wrapper"
-              className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/90 hover:bg-white border border-slate-200/90 shadow-2xs text-[11px] font-semibold backdrop-blur-xs select-none transition-colors"
-            >
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    isCurrentViewPollingEnabled
-                      ? 'bg-emerald-500 animate-pulse'
-                      : 'bg-slate-300'
-                  }`}
-                  aria-hidden="true"
-                />
-                <span className="text-slate-500 hidden sm:inline">Auto-Poll:</span>
-                <span
-                  className={`text-[10px] font-mono font-bold uppercase tracking-tight ${
-                    isCurrentViewPollingEnabled ? 'text-emerald-700' : 'text-slate-400'
-                  }`}
-                >
-                  {isCurrentViewPollingEnabled ? 'Active' : 'Off'}
-                </span>
-              </div>
-
-              {/* Small Switch */}
-              <button
-                id="toggle-view-polling"
-                type="button"
-                role="switch"
-                aria-checked={isCurrentViewPollingEnabled}
-                onClick={handleToggleCurrentViewPolling}
-                title={
-                  isCurrentViewPollingEnabled
-                    ? `Pause automatic data polling specifically for ${currentView.replace(/_/g, ' ')} view to conserve network resources`
-                    : `Enable automatic data polling specifically for ${currentView.replace(/_/g, ' ')} view`
-                }
-                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                  isCurrentViewPollingEnabled ? 'bg-teal-600' : 'bg-slate-300'
-                }`}
-              >
-                <span className="sr-only">Toggle automatic data polling for current view</span>
-                <span
-                  className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
-                    isCurrentViewPollingEnabled ? 'translate-x-3.5' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Subtle 'Refresh View' button */}
-            <button
-              id="btn-refresh-view"
-              onClick={handleForceRefreshView}
-              disabled={isForceRefreshing}
-              title="Force-refresh current view data immediately without waiting for auto-render cycle"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/90 hover:bg-white text-slate-500 hover:text-[#123B5D] border border-slate-200/90 shadow-2xs hover:shadow-xs text-[11px] font-semibold transition-all duration-200 cursor-pointer active:scale-95 group disabled:opacity-70 select-none backdrop-blur-xs"
-            >
-              <RefreshCw
-                className={`w-3.5 h-3.5 text-slate-400 group-hover:text-[#0F766E] transition-all duration-500 ${
-                  isForceRefreshing ? 'animate-spin text-[#0F766E]' : 'group-hover:rotate-180'
-                }`}
-              />
-              <span className="tracking-tight">
-                {isForceRefreshing ? 'Refreshing Data...' : 'Refresh View'}
-              </span>
-              {justRefreshed && (
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold animate-fadeIn">
-                  Updated
-                </span>
-              )}
-            </button>
-          </div>
-
-          <React.Fragment key={`view-${currentView}-${viewRefreshKey}`}>
+            <React.Fragment key={`view-${currentView}-${viewRefreshKey}`}>
             {currentView === 'dashboard' && (
             <DashboardView
               onNavigate={setCurrentView}

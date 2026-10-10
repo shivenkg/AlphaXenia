@@ -45,7 +45,7 @@ export const DatabaseConnectionConfigView: React.FC<DatabaseConnectionConfigView
 }) => {
   const activeUser = storageService.getActiveUser();
   const state = storageService.getState();
-  const isSuperAdmin = activeUser?.role === 'PLATFORM_SUPER_ADMIN';
+  const isSuperAdmin = activeUser?.role === 'SUPER_ADMIN';
 
   const [config, setConfig] = useState<DatabaseConnectionConfig>(() =>
     storageService.getDatabaseConfig()

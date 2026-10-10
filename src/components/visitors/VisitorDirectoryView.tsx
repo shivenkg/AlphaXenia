@@ -140,15 +140,28 @@ export const VisitorDirectoryView: React.FC<VisitorDirectoryViewProps> = ({ onIn
             </div>
 
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
+              <div className="relative flex-1 sm:w-72">
                 <Search className="w-4 h-4 text-[#526575] absolute left-3 top-2.5" />
                 <input
                   type="text"
-                  placeholder="Search visitor directory..."
+                  id="visitor-search-input"
+                  aria-label="Filter visitors by name or email"
+                  placeholder="Filter by name or email..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#F4F7FA] border border-[#D8E1E8] rounded-lg focus:outline-none focus:border-[#0F766E]"
+                  className="w-full pl-9 pr-8 py-1.5 text-xs bg-[#F4F7FA] border border-[#D8E1E8] rounded-lg focus:outline-none focus:border-[#0F766E] transition-colors"
                 />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="absolute right-2.5 top-2 text-[#526575] hover:text-[#172B3A] text-xs font-semibold cursor-pointer"
+                    title="Clear filter"
+                    aria-label="Clear filter"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
               <button
@@ -191,7 +204,10 @@ export const VisitorDirectoryView: React.FC<VisitorDirectoryViewProps> = ({ onIn
                 </thead>
                 <tbody className="divide-y divide-[#D8E1E8]">
                   {filteredVisitors.map((v) => (
-                    <tr key={v.id} className="hover:bg-[#F4F7FA] dark:hover:bg-[#12365C] transition">
+                    <tr
+                      key={v.id}
+                      className="group transition-all duration-200 ease-out hover:bg-teal-50/60 dark:hover:bg-[#12365C]/80 hover:shadow-md hover:-translate-y-0.5 hover:z-10 relative cursor-default"
+                    >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">

@@ -8,6 +8,7 @@ interface JSAlphaSoftLogoProps {
   darkTheme?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   forceDefaultBrand?: boolean;
+  hideSubtitle?: boolean;
 }
 
 export const JSAlphaSoftLogo: React.FC<JSAlphaSoftLogoProps> = ({
@@ -16,6 +17,7 @@ export const JSAlphaSoftLogo: React.FC<JSAlphaSoftLogoProps> = ({
   darkTheme = false,
   size = 'md',
   forceDefaultBrand = false,
+  hideSubtitle = false,
 }) => {
   const idPrefix = useId().replace(/:/g, '');
   const [imgError, setImgError] = useState(false);
@@ -199,20 +201,22 @@ export const JSAlphaSoftLogo: React.FC<JSAlphaSoftLogoProps> = ({
           <span className={darkTheme ? 'text-[#60A5FA] font-black' : 'text-[#1D4ED8] font-black'}>
             JS
           </span>
-          <span className={darkTheme ? 'text-white font-bold' : 'text-[#0F172A] font-bold'}>
+          <span
+            style={{ color: '#ced8e6' }}
+            className={darkTheme ? 'text-white font-bold' : 'text-[#090c10] font-bold'}
+          >
             AlphaSoft
           </span>
-          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-500 border border-orange-500/30 ml-1 leading-tight">
-            VMS
-          </span>
         </div>
-        <span
-          className={`text-[9px] tracking-wider uppercase font-semibold mt-1 ${
-            darkTheme ? 'text-slate-300' : 'text-[#526575]'
-          }`}
-        >
-          Visitor Management System
-        </span>
+        {!hideSubtitle && (
+          <span
+            className={`text-[9px] tracking-wider uppercase font-semibold mt-1 ${
+              darkTheme ? 'text-slate-300' : 'text-[#526575]'
+            }`}
+          >
+            Visitor Management System
+          </span>
+        )}
       </div>
     </div>
   );

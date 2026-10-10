@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ShieldCheck,
   Building2,
@@ -26,7 +26,11 @@ import {
   Database,
   QrCode,
   Sun,
-  Moon
+  Moon,
+  ExternalLink,
+  Mail,
+  Play,
+  Pause
 } from 'lucide-react';
 import { JSAlphaSoftLogo } from '../common/JSAlphaSoftLogo';
 import { getGlobalThemeMode, toggleGlobalThemeMode } from '../../utils/themeApplier';
@@ -46,6 +50,28 @@ export const ProductLandingView: React.FC<ProductLandingViewProps> = ({
   const [activeTab, setActiveTab] = useState<'kiosk' | 'badge' | 'multitenant' | 'emergency' | 'audit'>('kiosk');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [visitorVolume, setVisitorVolume] = useState<number>(2500);
+  const [scrollY, setScrollY] = useState<number>(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const toggleVideoPlayback = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsVideoPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
 
   const isDark = themeMode === 'dark';
 
@@ -66,91 +92,96 @@ export const ProductLandingView: React.FC<ProductLandingViewProps> = ({
 
   // Capacity calculations for interactive ROI / Campus Readiness calculator
   const estCheckInSeconds = 2.4;
-  const turnstilesNeeded = Math.ceil(visitorVolume / 800);
+  const turnstilesNeeded = Math.ceil(visitorVolume / 1000);
   const paperRollsSavedMonth = Math.round(visitorVolume * 0.08);
 
   const featureTabs = [
     {
       id: 'kiosk',
-      label: 'Front Desk & Fast Check-In',
+      label: 'Check-In',
+      navTitle: 'Front Desk & Fast Check-In',
       icon: ScanLine,
-      title: 'Touchless Visitor Reception & Walk-In Terminal',
+      title: 'Front Desk Excellence',
       description:
-        'Eliminate lobby bottlenecks with sub-3-second self-registration, government photo ID scanning, host arrival notifications, and instant pass issuance.',
+        'Automate lobby flows with touchless terminals and instant host arrivals dispatches across any secure campus architecture.',
       highlights: [
         'Instant walk-in registration with photo capture & signature',
-        'Automatic host arrival dispatches via SMS, WhatsApp, and Slack',
-        'Zero-trust pre-screening against custom restricted lists',
-        'Multi-gate check-in with synchronized campus turnstile relays'
+        'Host arrivals via SMS, WhatsApp, and Slack',
+        'Zero-trust screening against restricted lists',
+        'Turnstile relay synchronization for gated exit'
       ],
       previewStats: [
-        { label: 'Avg. Check-In Time', value: '< 15 seconds' },
-        { label: 'Lobby Wait Reduction', value: '78%' },
-        { label: 'Host Notification Latency', value: '< 200 ms' }
+        { label: 'Average Check-in', value: '15s' },
+        { label: 'Wait Reduction', value: '78%' },
+        { label: 'Dispatch Latency', value: '< 200 ms' }
       ]
     },
     {
       id: 'badge',
-      label: 'Thermal QR & Badge Engine',
+      label: 'QR Badges',
+      navTitle: 'Thermal QR & Badge Engine',
       icon: Printer,
-      title: 'Dynamic QR Badges with High-Speed Thermal Printing',
+      title: 'High-Velocity Badge Architecture',
       description:
-        'Deliver tamper-evident physical and digital badges with dynamic expiring QR codes, company branding, cleared security zones, and direct Zebra ZPL hardware spooling.',
+        'Deliver tamper-evident physical and dynamic expiring QR passes with company branding, cleared security zones, and direct Zebra ZPL hardware spooling.',
       highlights: [
-        'Zebra ZPL & thermal network spooler with automatic zero-lag cut',
-        'Time-expiring cryptographic QR codes that invalidate upon checkout',
-        'Visual zone clearance badges (Low, High, Restricted, Vault)',
-        'Digital mobile pass delivery via Apple Wallet & web links'
+        'High-speed thermal network spooler with automatic zero-lag cut',
+        'Dynamic auto-expiring QR codes linked with turnstile relays',
+        'Multi-tenant visual badges with clearance band coloring',
+        'Pass designer studio with drag & drop component customizer'
       ],
       previewStats: [
-        { label: 'Print Spooling Speed', value: '2.1 seconds' },
-        { label: 'Barcode Read Accuracy', value: '99.98%' },
-        { label: 'Supported Printers', value: 'Zebra, Brother, Dymo' }
+        { label: 'Thermal Print Speed', value: '< 2.4s' },
+        { label: 'Zebra ZPL Ready', value: '100%' },
+        { label: 'QR Scan Replay Guard', value: 'Active' }
       ]
     },
     {
       id: 'multitenant',
-      label: 'Multi-Tenant Campus Governance',
+      label: 'Governance',
+      navTitle: 'Multi-Tenant Governance',
       icon: Building2,
-      title: 'Enterprise Multi-Tenant Perimeter & Zone Isolation',
+      title: 'Zero-Trust Campus Partitioning',
       description:
-        'Govern multi-tenant corporate tech parks and multi-facility enterprises with strict logical tenant partitioning, site-specific policies, and role-based workflows.',
+        'Host thousands of corporate tenants on shared corporate campuses with rigorous RBAC access control, isolated tenant databases, and private branding.',
       highlights: [
-        'Strict tenant-level data segregation with independent branding',
-        'Campus, building zone, and turnstile gate mapping hierarchy',
-        'Granular role-based workflows for hosts, security, and admins',
-        'Cross-facility visitor tracking with perimeter boundary defense'
+        'Complete tenant data segregation with cryptographically isolated logs',
+        'Tenant-specific portal branding, accent colors, and custom NDAs',
+        'Dedicated department approvals and host directory synchronization',
+        'Role-tailored interfaces for Super Admins, Guards, and Approvers'
       ],
       previewStats: [
-        { label: 'Active Enterprise Sites', value: '25+ Facilities' },
-        { label: 'Data Isolation Tier', value: 'Schema-per-Tenant' },
-        { label: 'Perimeter Gates', value: 'Unlimited' }
+        { label: 'Tenant Isolation', value: 'Strict RBAC' },
+        { label: 'Custom Brand Engines', value: 'Enabled' },
+        { label: 'Multi-Site Routing', value: 'Unified' }
       ]
     },
     {
       id: 'emergency',
-      label: 'Emergency Evacuation & Muster',
+      label: 'Evacuation',
+      navTitle: 'Emergency Evacuation',
       icon: AlertTriangle,
-      title: 'Real-Time Evacuation Muster Station Accountability',
+      title: 'Life Safety & Emergency Rosters',
       description:
-        'In the event of a facility incident or drill, trigger campus-wide evacuation alarms and generate live headcount roll-calls for first responders across designated assembly muster stations.',
+        'Instantly generate real-time muster lists, trigger SMS/WhatsApp perimeter evacuation broadcasts, and conduct live headcount roll calls during campus emergencies.',
       highlights: [
-        '1-Click building-wide emergency evacuation alarm trigger',
-        'Real-time muster point tally with verified safe headcount',
-        'Instant un-accounted visitor roster export for fire marshals',
-        'Offline emergency roll-call survivability on mobile tablets'
+        'One-click instant building evacuation broadcast trigger',
+        'Live on-site occupancy counts segregated by building and muster point',
+        'Interactive roll call check-off for floor wardens and security leads',
+        'Offline emergency roster caching on edge devices'
       ],
       previewStats: [
-        { label: 'Evacuation Roll-Call Roster', value: 'Real-Time Live' },
-        { label: 'Muster Assembly Stations', value: 'Multi-Zone' },
-        { label: 'Audit Log Integrity', value: 'Immutable' }
+        { label: 'Roster Generation', value: '< 1.0s' },
+        { label: 'Broadcast Dispatch', value: 'Instant' },
+        { label: 'Edge Offline Roster', value: 'Encrypted' }
       ]
     },
     {
       id: 'audit',
-      label: 'Immutable Audit Trail',
+      label: 'Audit Logs',
+      navTitle: 'Immutable Audit Trail',
       icon: FileText,
-      title: 'Tamper-Evident Forensic Access Logs & Compliance',
+      title: 'Forensic Access Ledger',
       description:
         'Maintain an airtight forensic record of every gate entry, badge print, security override, and administrative update with cryptographic SHA-256 hash chains.',
       highlights: [
@@ -171,16 +202,16 @@ export const ProductLandingView: React.FC<ProductLandingViewProps> = ({
 
   const faqs = [
     {
-      q: 'How does the Visitor Management System enforce campus security?',
-      a: 'The platform integrates pre-registration, government photo ID verification, automated host arrival clearances, and dynamic QR badge issuance. Every visitor is assigned cleared physical zones and monitored across entry and exit gates.'
+      q: 'How does the system enforce campus security?',
+      a: 'It integrates pre-registration, government photo ID verification, and assignments to cleared physical zones monitored across entry and exit gates.'
     },
     {
-      q: 'Can our enterprise brand the visitor passes and registration portal?',
-      a: 'Yes. Each enterprise tenant can customize portal logos, typography, accent colors, custom badge templates, safety NDAs, and automated arrival email/SMS templates.'
+      q: 'Can our enterprise brand the visitor passes?',
+      a: 'Yes, all pass templates and check-in portals are fully skinnable to match corporate branding guidelines, including tenant logos, typography, accent colors, and safety NDAs.'
     },
     {
-      q: 'Does it support hardware turnstiles and thermal badge printers?',
-      a: 'Yes. Built-in device registries connect to network thermal printers (Zebra ZPL, Brother), optical barcode scanners, turnstile access relays, and self-service touchscreen kiosks.'
+      q: 'Does it support hardware turnstiles and printers?',
+      a: 'We provide full SDK support for various industrial optical turnstiles, Zebra ZPL/Brother thermal printers, optical barcode scanners, and touchscreen kiosks.'
     },
     {
       q: 'What happens during a network outage or internet disconnection?',
@@ -192,121 +223,102 @@ export const ProductLandingView: React.FC<ProductLandingViewProps> = ({
     }
   ];
 
+  const serifStyle = { fontFamily: "'Cormorant Garamond', Georgia, serif" };
+  const monoStyle = { fontFamily: "'JetBrains Mono', 'Geist Mono', monospace" };
+  const parallaxOffset = Math.min(scrollY * 0.28, 140);
+
   return (
     <div
-      className={`min-h-screen flex flex-col font-sans transition-colors duration-200 selection:bg-teal-500 selection:text-white ${
-        isDark ? 'bg-[#0A111E] text-slate-100' : 'bg-slate-50 text-slate-900'
+      className={`min-h-screen flex flex-col transition-colors duration-200 selection:bg-[#0F766E] selection:text-white ${
+        isDark ? 'bg-[#0B1523] text-slate-100' : 'bg-[#F8F7F4] text-[#0F2942]'
       }`}
     >
-      {/* Top Navigation Bar */}
+      {/* Main Header */}
       <header
-        className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all ${
+        className={`sticky top-0 z-50 backdrop-blur-md border-b transition-colors duration-200 ${
           isDark
-            ? 'bg-[#0C2B4E]/95 border-sky-500/40 shadow-md shadow-sky-950/40'
-            : 'bg-white/95 border-slate-200/90 shadow-2xs'
+            ? 'bg-[#0A1628]/95 border-white/10 shadow-md text-white'
+            : 'bg-white/95 border-slate-200/80 shadow-xs text-slate-900'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 h-20 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <JSAlphaSoftLogo forceDefaultBrand darkTheme={isDark} size="lg" />
+            <div className="flex items-center gap-2.5 cursor-pointer" onClick={onNavigateToLogin}>
+              <JSAlphaSoftLogo forceDefaultBrand darkTheme={isDark} size="md" hideSubtitle={true} />
+            </div>
+
             <nav
-              className={`hidden lg:flex items-center gap-6 text-xs font-semibold ${
-                isDark ? 'text-sky-200' : 'text-slate-600'
+              className={`hidden lg:flex items-center gap-7 text-xs font-semibold px-5 py-2 rounded-full border transition-colors ${
+                isDark
+                  ? 'bg-slate-800/80 border-slate-700/80 text-slate-200'
+                  : 'bg-slate-100/90 border-slate-200/80 text-slate-700'
               }`}
             >
-              <a
-                href="#features"
-                className={`transition-colors ${
-                  isDark ? 'hover:text-white' : 'hover:text-teal-700'
-                }`}
-              >
-                Features & Kiosks
+              <a href="#features" className={`transition-colors ${isDark ? 'hover:text-teal-300' : 'hover:text-[#0F766E]'}`}>
+                Kiosks
               </a>
-              <a
-                href="#architecture"
-                className={`transition-colors ${
-                  isDark ? 'hover:text-white' : 'hover:text-teal-700'
-                }`}
-              >
-                Campus Architecture
+              <a href="#architecture" className={`transition-colors ${isDark ? 'hover:text-teal-300' : 'hover:text-[#0F766E]'}`}>
+                Architecture
               </a>
-              <a
-                href="#calculator"
-                className={`transition-colors ${
-                  isDark ? 'hover:text-white' : 'hover:text-teal-700'
-                }`}
-              >
-                Readiness Calculator
+              <a href="#calculator" className={`transition-colors ${isDark ? 'hover:text-teal-300' : 'hover:text-[#0F766E]'}`}>
+                Calculator
               </a>
-              <a
-                href="#compliance"
-                className={`transition-colors ${
-                  isDark ? 'hover:text-white' : 'hover:text-teal-700'
-                }`}
-              >
-                Zero-Trust Compliance
+              <a href="#compliance" className={`transition-colors ${isDark ? 'hover:text-teal-300' : 'hover:text-[#0F766E]'}`}>
+                Compliance
               </a>
-              <a
-                href="#faq"
-                className={`transition-colors ${
-                  isDark ? 'hover:text-white' : 'hover:text-teal-700'
-                }`}
-              >
-                Enterprise FAQ
+              <a href="#faq" className={`transition-colors ${isDark ? 'hover:text-teal-300' : 'hover:text-[#0F766E]'}`}>
+                FAQ
               </a>
             </nav>
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Prominent Theme Toggle Button */}
+            {/* Theme Toggle Button */}
             <button
               type="button"
               id="landing-theme-toggle-btn"
               onClick={handleToggleTheme}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition cursor-pointer select-none ${
                 isDark
                   ? 'bg-amber-400/15 hover:bg-amber-400/25 border-amber-400/30 text-amber-300 shadow-xs'
-                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800'
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
               }`}
               title={isDark ? 'Switch to Clean Light Mode' : 'Switch to High-Contrast Dark Mode'}
             >
               {isDark ? (
                 <>
                   <Moon className="w-3.5 h-3.5 text-amber-300" />
-                  <span className="hidden sm:inline">Dark</span>
+                  <span className="hidden sm:inline text-[11px] font-bold">Dark</span>
                 </>
               ) : (
                 <>
-                  <Sun className="w-3.5 h-3.5 text-amber-600" />
-                  <span className="hidden sm:inline">Light</span>
+                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="hidden sm:inline text-[11px] font-bold">Light</span>
                 </>
               )}
             </button>
 
+            {/* Visitor Pre-Reg Button */}
             <button
               type="button"
               id="landing-nav-pre-register-btn"
               onClick={onNavigateToPublicPreRegister}
-              className={`hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+              className={`hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition cursor-pointer ${
                 isDark
-                  ? 'bg-white/5 hover:bg-white/10 border border-white/15 text-teal-300'
-                  : 'bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-800 shadow-2xs'
+                  ? 'border-teal-400/30 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20'
+                  : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
               }`}
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Visitor Self Pre-Registration</span>
+              <span>Visitor Pre-Reg</span>
             </button>
 
-            {/* PRIMARY REQUIRED ACTION: Application Sign In Button */}
+            {/* Application Sign In Button */}
             <button
               type="button"
               id="landing-nav-sign-in-btn"
               onClick={onNavigateToLogin}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-extrabold text-xs transition active:scale-98 cursor-pointer ${
-                isDark
-                  ? 'bg-teal-400 hover:bg-teal-300 text-slate-950 shadow-lg shadow-teal-400/25'
-                  : 'bg-[#123B5D] hover:bg-[#0E2F4A] text-white shadow-md shadow-blue-900/15'
-              }`}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-xs transition active:scale-98 cursor-pointer shadow-sm bg-[#327988] hover:bg-[#2b6875] text-white shadow-slate-900/15"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Application Sign In</span>
@@ -316,440 +328,472 @@ export const ProductLandingView: React.FC<ProductLandingViewProps> = ({
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section
-        className={`relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 border-b ${
-          isDark
-            ? 'border-white/10'
-            : 'border-slate-200 bg-gradient-to-b from-white via-slate-50/50 to-slate-100/70'
-        }`}
-      >
-        {/* Subtle ambient lighting */}
-        <div
-          className={`absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] blur-3xl pointer-events-none ${
-            isDark
-              ? 'bg-gradient-to-b from-teal-500/10 via-[#123B5D]/20 to-transparent'
-              : 'bg-gradient-to-b from-teal-200/20 via-blue-100/30 to-transparent'
-          }`}
-        />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto space-y-6">
-            {/* Kicker */}
+      {/* Main Content Body */}
+      <main className="flex-1 overflow-y-auto">
+        {/* Parallax Hero Section with Animated Realistic Video Clip */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 pt-6 sm:pt-8">
+          <section className="relative overflow-hidden rounded-[28px] sm:rounded-[38px] border shadow-2xl transition-colors duration-200">
+            {/* Parallax Realistic Animated Video Background */}
             <div
-              className={`inline-flex items-center justify-center gap-2 text-xs font-bold tracking-wide uppercase px-3.5 py-1 rounded-full border ${
+              className="absolute inset-0 pointer-events-none will-change-transform overflow-hidden"
+              style={{
+                transform: `translate3d(0, ${parallaxOffset}px, 0) scale(1.12)`,
+                transformOrigin: 'center center',
+              }}
+            >
+              <video
+                ref={videoRef}
+                autoPlay
+                loop
+                muted
+                playsInline
+                poster="/videos/hero_entrance_poster.jpg"
+                className="w-full h-full object-cover brightness-90 contrast-105"
+              >
+                <source src="/videos/hero_entrance.webm" type="video/webm" />
+                <source src="/videos/hero_entrance.mp4" type="video/mp4" />
+              </video>
+            </div>
+
+            {/* Measured Scrim Gradient Over Video guaranteeing WCAG AA readability */}
+            <div
+              className={`absolute inset-0 transition-colors duration-200 ${
                 isDark
-                  ? 'text-teal-300 bg-teal-500/10 border-teal-400/25'
-                  : 'text-teal-800 bg-teal-50 border-teal-200 shadow-2xs'
+                  ? 'bg-gradient-to-b from-[#091322]/90 via-[#0B1523]/85 to-[#0B1523]/95'
+                  : 'bg-gradient-to-b from-[#F8F7F4]/92 via-[#F8F7F4]/88 to-[#F8F7F4]/96'
               }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-teal-600" />
-              <span>Enterprise Physical Security & Access Intelligence</span>
-              <span aria-hidden="true">·</span>
-              <span className={isDark ? 'text-slate-400 font-normal' : 'text-slate-500 font-normal'}>
-                v2026.09 Platform
-              </span>
-            </div>
+            />
 
-            <h1
-              className={`text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight ${
-                isDark ? 'text-white' : 'text-slate-950'
-              }`}
-            >
-              Zero-Trust Campus Visitor Management & Perimeter Access Governance
-            </h1>
+            {/* Atmospheric subtle radial glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-teal-500/10 blur-3xl pointer-events-none rounded-full" />
 
-            <p
-              className={`text-base sm:text-lg leading-relaxed max-w-2xl mx-auto ${
-                isDark ? 'text-slate-300' : 'text-slate-600'
-              }`}
-            >
-              Accelerate physical check-ins, automate high-speed thermal QR badge printing, isolate multi-tenant facilities, and guarantee safety with real-time emergency evacuation rosters.
-            </p>
-
-            {/* Primary Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button
-                type="button"
-                id="hero-primary-application-sign-in-btn"
-                onClick={onNavigateToLogin}
-                className={`w-full sm:w-auto px-6 py-3.5 rounded-xl font-black text-sm transition flex items-center justify-center gap-2 cursor-pointer active:scale-98 ${
-                  isDark
-                    ? 'bg-teal-400 hover:bg-teal-300 text-slate-950 shadow-xl shadow-teal-400/25'
-                    : 'bg-teal-700 hover:bg-teal-800 text-white shadow-lg shadow-teal-700/20'
-                }`}
-              >
-                <Lock className="w-4 h-4" />
-                <span>Application Sign In</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                id="hero-secondary-pre-register-btn"
-                onClick={onNavigateToPublicPreRegister}
-                className={`w-full sm:w-auto px-6 py-3.5 rounded-xl font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer ${
-                  isDark
-                    ? 'bg-white/10 hover:bg-white/15 border border-white/20 text-white'
-                    : 'bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 shadow-2xs'
-                }`}
-              >
-                <Share2 className={`w-4 h-4 ${isDark ? 'text-teal-300' : 'text-teal-700'}`} />
-                <span>Visitor Self Pre-Registration</span>
-              </button>
-            </div>
-
-            {/* Key Metrics Display */}
+            {/* Foreground Content */}
             <div
-              className={`pt-8 border-t flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs ${
-                isDark ? 'border-white/10 text-slate-300' : 'border-slate-200 text-slate-600'
-              }`}
+              style={{
+                width: '850px',
+                height: '670px',
+                maxWidth: '100%',
+              }}
+              className="relative z-10 px-6 sm:px-12 lg:px-16 py-16 sm:py-24 text-center max-w-4xl mx-auto"
             >
-              <div className="flex items-center gap-2">
-                <span className={`font-extrabold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  99.99%
-                </span>
-                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Hardware Uptime</span>
-              </div>
-              <span aria-hidden="true" className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
-              <div className="flex items-center gap-2">
-                <span className={`font-extrabold text-base ${isDark ? 'text-teal-300' : 'text-teal-700'}`}>
-                  &lt; 3.0s
-                </span>
-                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Thermal Badge Print</span>
-              </div>
-              <span aria-hidden="true" className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
-              <div className="flex items-center gap-2">
-                <span className={`font-extrabold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  DPDP 2023
-                </span>
-                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>& ISO 27001 Certified</span>
-              </div>
-              <span aria-hidden="true" className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
-              <div className="flex items-center gap-2">
-                <span className={`font-extrabold text-base ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-                  Zero-Trust
-                </span>
-                <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Edge Offline Sync</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Enterprise Production Deployments */}
-      <section
-        className={`py-10 border-b ${
-          isDark
-            ? 'bg-[#0D1828]/80 border-white/10'
-            : 'bg-slate-100/80 border-slate-200'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div
-            className={`text-center text-[11px] font-bold tracking-wider uppercase mb-6 ${
-              isDark ? 'text-slate-400' : 'text-slate-600'
-            }`}
-          >
-            Deployed Across Mission-Critical Campuses & Multi-Tenant Facilities
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center justify-items-center opacity-90">
-            <div className="text-center">
-              <div
-                className={`font-black text-sm tracking-widest ${
-                  isDark ? 'text-slate-200' : 'text-slate-800'
-                }`}
-              >
-                TATA ADVANCED
-              </div>
-              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Mumbai & Bengaluru Campuses
-              </div>
-            </div>
-            <div className="text-center">
-              <div
-                className={`font-black text-sm tracking-widest ${
-                  isDark ? 'text-slate-200' : 'text-slate-800'
-                }`}
-              >
-                RELIANCE JIO
-              </div>
-              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Navi Mumbai Cyber Park
-              </div>
-            </div>
-            <div className="text-center">
-              <div
-                className={`font-black text-sm tracking-widest ${
-                  isDark ? 'text-slate-200' : 'text-slate-800'
-                }`}
-              >
-                INFOSYS DEV
-              </div>
-              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Cyber City DLF Phase 2
-              </div>
-            </div>
-            <div className="text-center">
-              <div
-                className={`font-black text-sm tracking-widest ${
-                  isDark ? 'text-slate-200' : 'text-slate-800'
-                }`}
-              >
-                BFSI CORE SOC
-              </div>
-              <div className={`text-[10px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                BKC Financial Perimeter
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Interactive Feature Explorer Section */}
-      <section
-        id="features"
-        className={`py-16 lg:py-24 border-b ${
-          isDark ? 'border-white/10' : 'border-slate-200 bg-white'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2
-              className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}
-            >
-              Purpose-Built Capabilities for Physical Access Control
-            </h2>
-            <p className={`text-sm mt-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Explore how our five specialized engine modules automate security, front desk throughput, and campus safety.
-            </p>
-          </div>
-
-          {/* Tab Navigation Controls */}
-          <div
-            className={`flex flex-wrap items-center justify-center gap-1.5 p-1.5 rounded-2xl max-w-4xl mx-auto mb-10 border ${
-              isDark
-                ? 'bg-[#0C2B4E] border-sky-500/40 shadow-md shadow-sky-950/40'
-                : 'bg-slate-100 border-slate-200 shadow-2xs'
-            }`}
-          >
-            {featureTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? isDark
-                        ? 'bg-sky-400 text-slate-950 shadow-md font-extrabold shadow-sky-400/25'
-                        : 'bg-white text-teal-900 shadow-xs border border-slate-200 font-extrabold'
-                      : isDark
-                      ? 'text-sky-200 hover:text-white hover:bg-sky-500/20'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+              {/* Top Tag */}
+              <div className="flex flex-wrap items-center justify-center gap-2.5 mb-6">
+                <div
+                  style={monoStyle}
+                  className={`text-[11px] sm:text-xs uppercase tracking-[0.18em] font-bold inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border shadow-2xs ${
+                    isDark
+                      ? 'bg-teal-500/15 border-teal-400/30 text-teal-300'
+                      : 'bg-teal-700/10 border-teal-700/25 text-teal-800'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Active Tab Detailed Showcase */}
-          <div
-            className={`rounded-3xl border p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center ${
-              isDark
-                ? 'bg-[#101D30]/90 border-white/10 shadow-lg'
-                : 'bg-slate-50 border-slate-200 shadow-sm'
-            }`}
-          >
-            <div className="lg:col-span-7 space-y-5">
-              <div
-                className={`text-xs font-bold uppercase tracking-wider ${
-                  isDark ? 'text-teal-300' : 'text-teal-700'
-                }`}
-              >
-                Module Showcase
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#0F766E] dark:text-teal-400" />
+                  <span>Visitor Access Management v2026.09</span>
+                </div>
               </div>
-              <h3
-                className={`text-2xl font-bold tracking-tight ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
+
+              {/* Grand Display Headline */}
+              <h1
+                style={{
+                  fontFamily: "'Carter One', cursive, sans-serif",
+                  fontSize: '44px',
+                  fontWeight: 'normal',
+                  lineHeight: '58px',
+                  width: '693.323px',
+                  maxWidth: '100%',
+                  marginLeft: '40px',
+                  paddingLeft: '0px',
+                  borderColor: isDark ? '#334155' : '#CBD5E1',
+                  borderRadius: '6px',
+                  borderWidth: '3px',
+                  borderStyle: 'groove',
+                  color: isDark ? '#caefdf' : '#0F2942',
+                }}
+                className="tracking-tight mb-6"
               >
-                {currentTabObj.title}
-              </h3>
+                Zero-Trust Perimeter Access Intelligence for Modern Campuses
+              </h1>
+
+              {/* Subtitle */}
               <p
-                className={`text-sm leading-relaxed ${
-                  isDark ? 'text-slate-300' : 'text-slate-600'
+                className={`text-base sm:text-lg md:text-xl font-normal leading-relaxed max-w-2xl mx-auto mb-10 transition-colors ${
+                  isDark ? 'text-slate-200' : 'text-slate-700'
                 }`}
               >
-                {currentTabObj.description}
+                A high-throughput access governance platform designed to accelerate front-desk check-in, orchestrate multi-tenant visitor approvals, and enforce zero-trust optical turnstiles.
               </p>
 
-              <div className="space-y-2.5 pt-2">
-                {currentTabObj.highlights.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-start gap-2.5 text-xs ${
-                      isDark ? 'text-slate-200' : 'text-slate-700'
-                    }`}
-                  >
-                    <CheckCircle2
-                      className={`w-4 h-4 shrink-0 mt-0.5 ${
-                        isDark ? 'text-teal-400' : 'text-teal-700'
-                      }`}
-                    />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Action trigger in feature preview */}
-              <div className="pt-4 flex items-center gap-3">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
                   type="button"
+                  id="hero-primary-application-sign-in-btn"
                   onClick={onNavigateToLogin}
-                  className={`px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer ${
+                  className={`w-full sm:w-auto px-9 py-4 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg active:scale-98 ${
                     isDark
-                      ? 'bg-teal-400 hover:bg-teal-300 text-slate-950'
-                      : 'bg-teal-700 hover:bg-teal-800 text-white shadow-2xs'
+                      ? 'bg-[#0F766E] hover:bg-teal-400 text-white shadow-teal-950/40'
+                      : 'bg-[#123B5D] hover:bg-[#0F766E] text-white shadow-slate-900/20'
                   }`}
                 >
-                  <span>Launch in Terminal</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <Lock className="w-4 h-4" />
+                  <span>Sign In to Dashboard</span>
+                  <ArrowRight className="w-4 h-4" />
                 </button>
+
                 <button
                   type="button"
+                  id="hero-secondary-pre-register-btn"
                   onClick={onNavigateToPublicPreRegister}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  className={`w-full sm:w-auto px-9 py-4 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer border shadow-xs ${
                     isDark
-                      ? 'bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200'
-                      : 'bg-white hover:bg-slate-100 border border-slate-300 text-slate-800'
+                      ? 'border-white/20 bg-white/5 text-white hover:bg-white/15'
+                      : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
                   }`}
                 >
-                  <span>Test Pre-Registration</span>
+                  <Share2 className="w-4 h-4 text-[#0F766E] dark:text-teal-400" />
+                  <span>Visitor Registration Portal</span>
                 </button>
               </div>
             </div>
+          </section>
 
-            {/* Right Card: Dynamic Metric & Visual Preview */}
+          {/* Stats Stripe */}
+          <div
+            className={`py-12 my-6 grid grid-cols-2 lg:grid-cols-4 gap-8 text-center rounded-2xl border transition-colors ${
+              isDark
+                ? 'bg-[#0E1A2C]/80 border-white/10 text-white shadow-md'
+                : 'bg-white border-slate-200/80 text-slate-900 shadow-xs'
+            }`}
+          >
+            <div className="space-y-1">
+              <span
+                style={{ fontFamily: "'Esteban', serif", fontSize: '40px' }}
+                className={`font-bold block leading-none ${isDark ? 'text-white' : 'text-[#0F2942]'}`}
+              >
+                99.9%
+              </span>
+              <span
+                style={monoStyle}
+                className="text-xs uppercase tracking-[0.18em] font-bold text-[#0F766E] dark:text-teal-400 block"
+              >
+                Hardware Uptime
+              </span>
+            </div>
+            <div className="space-y-1">
+              <span
+                style={{ fontFamily: "'Esteban', serif", fontSize: '40px' }}
+                className={`font-bold block leading-none ${isDark ? 'text-white' : 'text-[#0F2942]'}`}
+              >
+                &lt;3.0s
+              </span>
+              <span
+                style={monoStyle}
+                className="text-xs uppercase tracking-[0.18em] font-bold text-[#0F766E] dark:text-teal-400 block"
+              >
+                Badge Thermal Print
+              </span>
+            </div>
+            <div className="space-y-1">
+              <span
+                style={{ fontFamily: "'Esteban', serif", fontSize: '40px' }}
+                className={`font-bold block leading-none ${isDark ? 'text-white' : 'text-[#0F2942]'}`}
+              >
+                ISO
+              </span>
+              <span
+                style={monoStyle}
+                className="text-xs uppercase tracking-[0.18em] font-bold text-[#0F766E] dark:text-teal-400 block"
+              >
+                27001 &amp; SOC-2
+              </span>
+            </div>
+            <div className="space-y-1">
+              <span
+                style={{ fontFamily: "'Esteban', serif", fontSize: '40px', fontWeight: 'bold' }}
+                className={`font-bold block leading-none ${isDark ? 'text-white' : 'text-[#0F2942]'}`}
+              >
+                EDGE
+              </span>
+              <span
+                style={monoStyle}
+                className="text-xs uppercase tracking-[0.18em] font-bold text-[#0F766E] dark:text-teal-400 block"
+              >
+                Offline Resilient
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Section with Distinctive Rounded Top (.features-wrapper) */}
+        <div
+          id="features"
+          className={`mt-10 pt-16 sm:pt-24 pb-20 border-t rounded-t-[40px] sm:rounded-t-[60px] transition-colors ${
+            isDark
+              ? 'bg-[#0E1A2C] border-white/10'
+              : 'bg-white border-[#123B5D]/10'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+            {/* Feature Tabs (5 Grid Columns) */}
             <div
-              className={`lg:col-span-5 rounded-2xl border p-6 space-y-5 ${
+              className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-[1px] p-[1px] rounded-2xl mb-14 border overflow-hidden ${
                 isDark
-                  ? 'bg-[#0A1322] border-white/10'
-                  : 'bg-white border-slate-200 shadow-xs'
+                  ? 'bg-white/10 border-white/15'
+                  : 'bg-[#123B5D]/10 border-[#123B5D]/10'
               }`}
             >
-              <div
-                className={`flex items-center justify-between border-b pb-3 ${
-                  isDark ? 'border-white/10' : 'border-slate-200'
-                }`}
-              >
-                <div
-                  className={`text-xs font-bold flex items-center gap-2 ${
-                    isDark ? 'text-white' : 'text-slate-900'
-                  }`}
-                >
-                  <Cpu className={`w-4 h-4 ${isDark ? 'text-teal-400' : 'text-teal-700'}`} />
-                  <span>Performance Benchmark</span>
-                </div>
-                <span className="text-[10px] font-mono text-emerald-600 font-bold flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  OPERATIONAL
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {currentTabObj.previewStats.map((stat, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-3.5 rounded-xl border flex items-center justify-between ${
-                      isDark
-                        ? 'bg-white/5 border-white/5'
-                        : 'bg-slate-50 border-slate-200'
+              {featureTabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`py-4 px-3 text-center transition-all cursor-pointer ${
+                      isActive
+                        ? isDark
+                          ? 'bg-[#15273F] text-white border-b-2 border-teal-400 shadow-inner'
+                          : 'bg-teal-50/90 text-teal-950 border-b-2 border-[#0F766E] shadow-2xs'
+                        : isDark
+                        ? 'bg-[#0B1626] text-slate-300 hover:bg-[#122238] hover:text-white'
+                        : 'bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                     }`}
                   >
-                    <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {stat.label}
-                    </span>
                     <span
-                      className={`font-mono font-bold text-sm ${
-                        isDark ? 'text-teal-300' : 'text-teal-800'
+                      style={{ fontFamily: "'Esteban', serif", fontSize: '15px' }}
+                      className={`uppercase tracking-[0.18em] font-bold block ${
+                        isActive ? (isDark ? 'text-teal-300' : 'text-[#0F766E]') : ''
                       }`}
                     >
-                      {stat.value}
+                      {tab.label}
                     </span>
-                  </div>
-                ))}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Feature Content (Left Copy + Right Efficiency Card) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+              <div className="lg:col-span-7 space-y-6">
+                <h2
+                  style={{ ...serifStyle, fontSize: '41px' }}
+                  className={`font-semibold leading-tight ${
+                    isDark ? 'text-white' : 'text-[#0F2942]'
+                  }`}
+                >
+                  {currentTabObj.title}
+                </h2>
+
+                <p
+                  style={{ fontFamily: "'Clarity City', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", fontSize: '18px', fontWeight: 'bold' }}
+                  className={`leading-relaxed ${
+                    isDark ? 'text-slate-200' : 'text-slate-700'
+                  }`}
+                >
+                  {currentTabObj.description}
+                </p>
+
+                <ul className="space-y-3.5 pt-2">
+                  {currentTabObj.highlights.map((item, idx) => (
+                    <li
+                      key={idx}
+                      className={`flex items-center gap-3 text-sm sm:text-base font-medium ${
+                        isDark ? 'text-slate-100' : 'text-slate-800'
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-[#0F766E] dark:bg-teal-400 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="pt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={onNavigateToLogin}
+                    className={`px-6 py-3 rounded-full font-bold text-xs transition cursor-pointer shadow-md flex items-center gap-2 ${
+                      isDark
+                        ? 'bg-[#0F766E] hover:bg-teal-400 text-white shadow-teal-950/40'
+                        : 'bg-[#123B5D] hover:bg-[#0F766E] text-white shadow-slate-900/15'
+                    }`}
+                  >
+                    <span>Launch in Terminal</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onNavigateToPublicPreRegister}
+                    className={`px-6 py-3 rounded-full border text-xs font-bold transition cursor-pointer ${
+                      isDark
+                        ? 'border-white/20 bg-white/5 text-white hover:bg-white/15'
+                        : 'border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>Test Pre-Registration</span>
+                  </button>
+                </div>
               </div>
 
-              <div
-                className={`p-3 rounded-xl border text-[11px] leading-relaxed ${
-                  isDark
-                    ? 'bg-teal-500/10 border-teal-500/20 text-teal-200'
-                    : 'bg-teal-50 border-teal-200 text-teal-900'
-                }`}
-              >
-                Hardware-accelerated edge sync engine ensures zero turnstile lag even under peak campus rush hour traffic.
+              {/* Right: Efficiency Report Card */}
+              <div className="lg:col-span-5">
+                <div
+                  className={`p-8 sm:p-12 rounded-3xl border text-center transition-colors shadow-lg ${
+                    isDark
+                      ? 'bg-[#0B1728] border-white/10'
+                      : 'bg-white border-slate-200/90 shadow-sm'
+                  }`}
+                >
+                  <div
+                    style={{ ...monoStyle, fontSize: '17px' }}
+                    className="uppercase tracking-[0.2em] font-semibold text-[#0F766E] mb-8"
+                  >
+                    Efficiency Report
+                  </div>
+
+                  <div className="flex justify-center items-center gap-8 sm:gap-12">
+                    <div className="text-center">
+                      <div
+                        style={serifStyle}
+                        className={`text-4xl sm:text-5xl font-semibold ${
+                          isDark ? 'text-white' : 'text-[#123B5D]'
+                        }`}
+                      >
+                        {currentTabObj.previewStats[0]?.value || '15s'}
+                      </div>
+                      <div
+                        style={{ ...monoStyle, fontSize: '13px' }}
+                        className={`uppercase tracking-wider mt-1 ${
+                          isDark ? 'text-slate-400' : 'text-slate-600 font-medium'
+                        }`}
+                      >
+                        {currentTabObj.previewStats[0]?.label || 'Avg. Check-In'}
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      <div
+                        style={serifStyle}
+                        className="text-4xl sm:text-5xl font-semibold text-[#0F766E]"
+                      >
+                        {currentTabObj.previewStats[1]?.value || '78%'}
+                      </div>
+                      <div
+                        style={{ ...monoStyle, fontSize: '13px' }}
+                        className={`uppercase tracking-wider mt-1 ${
+                          isDark ? 'text-slate-400' : 'text-slate-600 font-medium'
+                        }`}
+                      >
+                        {currentTabObj.previewStats[1]?.label || 'Wait Reduction'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <p
+                    className={`mt-8 text-xs italic ${
+                      isDark ? 'text-slate-400' : 'text-[#123B5D]/70'
+                    }`}
+                  >
+                    Operational data indicates zero turnstile lag during rush hour traffic.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Interactive Campus Readiness & Capacity Calculator */}
-      <section
-        id="calculator"
-        className={`py-16 border-b ${
-          isDark
-            ? 'bg-[#0D1828]/80 border-white/10'
-            : 'bg-slate-100/70 border-slate-200'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-3 mb-10">
-            <h2
-              className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}
+        {/* Enterprise Architecture Deployment Ribbon */}
+        <section
+          id="architecture"
+          className={`py-12 border-y transition-colors ${
+            isDark
+              ? 'bg-[#060D17] border-white/10 text-slate-200'
+              : 'bg-slate-100 border-slate-200 text-slate-900'
+          }`}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+            <div
+              style={{ ...monoStyle, fontSize: '15px' }}
+              className="text-center font-bold tracking-[0.2em] uppercase text-[#0F766E] dark:text-teal-400 mb-6"
             >
-              Interactive Campus Throughput & Hardware Sizing
-            </h2>
-            <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Estimate turnstiles, badge printing throughput, and check-in time for your campus traffic.
-            </p>
+              Validated Enterprise Deployments
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center justify-items-center">
+              <div className="text-center">
+                <div style={serifStyle} className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0F2942]'}`}>
+                  TATA ADVANCED
+                </div>
+                <div style={{ ...monoStyle, fontSize: '13px' }} className="text-[#0F766E] dark:text-teal-300 font-medium">
+                  Bengaluru Campus
+                </div>
+              </div>
+              <div className="text-center">
+                <div style={serifStyle} className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0F2942]'}`}>
+                  RELIANCE JIO
+                </div>
+                <div style={{ ...monoStyle, fontSize: '13px' }} className="text-[#0F766E] dark:text-teal-300 font-medium">
+                  Cyber Park
+                </div>
+              </div>
+              <div className="text-center">
+                <div style={serifStyle} className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0F2942]'}`}>
+                  INFOSYS DEV
+                </div>
+                <div style={{ ...monoStyle, fontSize: '13px' }} className="text-[#0F766E] dark:text-teal-300 font-medium">
+                  DLF Phase 2
+                </div>
+              </div>
+              <div className="text-center">
+                <div style={serifStyle} className={`text-xl sm:text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0F2942]'}`}>
+                  BFSI CORE SOC
+                </div>
+                <div style={{ ...monoStyle, fontSize: '13px' }} className="text-[#0F766E] dark:text-teal-300 font-medium">
+                  BKC Perimeter
+                </div>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div
-            className={`max-w-4xl mx-auto rounded-3xl border p-6 sm:p-8 ${
+        {/* Interactive Campus Readiness Calculator (#calculator) */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
+          <section
+            id="calculator"
+            style={{ backgroundColor: '#819fb7' }}
+            className={`my-16 sm:my-24 p-8 sm:p-14 lg:p-20 rounded-[32px] sm:rounded-[44px] text-white shadow-2xl relative overflow-hidden border ${
               isDark
-                ? 'bg-[#101D30] border-white/10 shadow-lg'
-                : 'bg-white border-slate-200 shadow-sm'
+                ? 'border-cyan-500/20'
+                : 'border-slate-700/30'
             }`}
           >
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label
-                    className={`text-xs font-bold ${
-                      isDark ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    Estimated Monthly Visitor Volume:
-                  </label>
-                  <span
-                    className={`font-mono text-base font-extrabold ${
-                      isDark ? 'text-teal-300' : 'text-teal-800'
-                    }`}
-                  >
-                    {visitorVolume.toLocaleString()} visitors / month
-                  </span>
-                </div>
+            <div className="max-w-3xl mx-auto text-center space-y-4">
+              <div
+                style={{ ...monoStyle, fontSize: '16px', color: '#085149' }}
+                className="uppercase tracking-[0.2em] font-semibold"
+              >
+                CAPACITY SIZING ENGINE
+              </div>
+
+              <h2
+                style={{
+                  fontFamily: "'Esteban', serif",
+                  fontWeight: 'bold',
+                  color: '#053c24',
+                  fontSize: '40px',
+                }}
+                className="text-3xl sm:text-5xl font-semibold leading-tight"
+              >
+                Campus Readiness Calculator
+              </h2>
+
+              <p
+                style={{ color: '#1c0202' }}
+                className="text-sm sm:text-base font-light max-w-xl mx-auto"
+              >
+                Scale visitor volume to see recommended hardware specifications.
+              </p>
+
+              {/* Slider Component */}
+              <div className="pt-6 max-w-2xl mx-auto">
                 <input
                   type="range"
                   min="500"
@@ -757,390 +801,355 @@ export const ProductLandingView: React.FC<ProductLandingViewProps> = ({
                   step="500"
                   value={visitorVolume}
                   onChange={(e) => setVisitorVolume(Number(e.target.value))}
-                  className="w-full accent-teal-600 cursor-pointer"
+                  style={{ borderColor: '#147878' }}
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#0F766E]"
                 />
+
                 <div
-                  className={`flex justify-between text-[10px] font-mono mt-1 ${
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  }`}
+                  style={monoStyle}
+                  className="flex justify-between items-center text-[10px] sm:text-[11px] mt-4"
                 >
-                  <span>500 (Single Building)</span>
-                  <span>10,000 (Tech Park)</span>
-                  <span>25,000+ (Multi-Campus)</span>
+                  <span
+                    style={{ fontSize: '13px', fontWeight: 'bold', color: '#146464' }}
+                  >
+                    500 (SINGLE)
+                  </span>
+                  <span
+                    style={{ color: '#0f6464' }}
+                    className="text-xl sm:text-2xl font-bold"
+                  >
+                    {visitorVolume.toLocaleString()} MONTHLY
+                  </span>
+                  <span
+                    style={{ fontSize: '13px', fontWeight: 'bold', color: '#146464' }}
+                  >
+                    25,000 (MULTI-CAMPUS)
+                  </span>
+                </div>
+
+                {/* 3 Output Metrics Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-10 mt-8 border-t border-white/10">
+                  <div className="space-y-1">
+                    <span
+                      style={serifStyle}
+                      className="text-3xl sm:text-4xl font-semibold text-white block leading-none"
+                    >
+                      {turnstilesNeeded}
+                    </span>
+                    <span
+                      style={monoStyle}
+                      className="text-[10px] uppercase tracking-[0.15em] font-semibold text-teal-300 block"
+                    >
+                      OPTICAL GATES
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span
+                      style={serifStyle}
+                      className="text-3xl sm:text-4xl font-semibold text-teal-300 block leading-none"
+                    >
+                      {estCheckInSeconds}s
+                    </span>
+                    <span
+                      style={monoStyle}
+                      className="text-[10px] uppercase tracking-[0.15em] font-semibold text-teal-300 block"
+                    >
+                      BADGE DISPATCH
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span
+                      style={serifStyle}
+                      className="text-3xl sm:text-4xl font-semibold text-white block leading-none"
+                    >
+                      {paperRollsSavedMonth}
+                    </span>
+                    <span
+                      style={monoStyle}
+                      className="text-[10px] uppercase tracking-[0.15em] font-semibold text-teal-300 block"
+                    >
+                      REAMS SAVED
+                    </span>
+                  </div>
                 </div>
               </div>
+            </div>
+          </section>
 
+          {/* Compliance Grid (#compliance) */}
+          <section id="compliance" className="py-12 sm:py-16">
+            <div className="text-center max-w-2xl mx-auto mb-12">
               <div
-                className={`grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t ${
-                  isDark ? 'border-white/10' : 'border-slate-200'
+                style={monoStyle}
+                className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-semibold text-[#0F766E] mb-2"
+              >
+                COMPLIANCE & GOVERNANCE
+              </div>
+              <h2
+                style={{
+                  ...serifStyle,
+                  fontSize: '40px',
+                  width: '1200px',
+                  maxWidth: '100%',
+                  paddingTop: '2px',
+                  marginBottom: '4px',
+                  height: '100px',
+                  marginRight: '8px',
+                  marginLeft: '-42px',
+                  paddingLeft: '3px',
+                  paddingRight: '1px',
+                }}
+                className={`text-3xl sm:text-4xl font-semibold ${
+                  isDark ? 'text-white' : 'text-[#0F2942]'
+                }`}
+              >
+                Zero-Trust Physical Governance
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              {/* Card 1 */}
+              <div
+                className={`p-8 sm:p-10 rounded-2xl border transition-all duration-300 hover:shadow-xl ${
+                  isDark
+                    ? 'bg-[#0B1728] border-white/10'
+                    : 'bg-white border-slate-200/80 shadow-sm'
                 }`}
               >
                 <div
-                  className={`p-4 rounded-xl border ${
-                    isDark
-                      ? 'bg-[#0A1322] border-white/10'
-                      : 'bg-slate-50 border-slate-200'
+                  style={{ ...monoStyle, fontSize: '14px' }}
+                  className="uppercase tracking-[0.18em] font-bold text-[#0F766E] dark:text-teal-400 mb-4"
+                >
+                  DPDP 2023
+                </div>
+                <h4
+                  className={`text-lg font-bold mb-3 ${
+                    isDark ? 'text-white' : 'text-[#0F2942]'
                   }`}
                 >
-                  <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Recommended Turnstiles
-                  </div>
-                  <div
-                    className={`text-xl font-mono font-black mt-1 ${
-                      isDark ? 'text-white' : 'text-slate-900'
-                    }`}
-                  >
-                    {turnstilesNeeded} Optical Gates
-                  </div>
-                  <div className={`text-[10px] mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Peak arrival buffer included
-                  </div>
-                </div>
-
-                <div
-                  className={`p-4 rounded-xl border ${
-                    isDark
-                      ? 'bg-[#0A1322] border-white/10'
-                      : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Thermal Print Dispatch
-                  </div>
-                  <div
-                    className={`text-xl font-mono font-black mt-1 ${
-                      isDark ? 'text-teal-300' : 'text-teal-700'
-                    }`}
-                  >
-                    {estCheckInSeconds}s / Badge
-                  </div>
-                  <div className={`text-[10px] mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Sub-second QR rendering
-                  </div>
-                </div>
-
-                <div
-                  className={`p-4 rounded-xl border ${
-                    isDark
-                      ? 'bg-[#0A1322] border-white/10'
-                      : 'bg-slate-50 border-slate-200'
-                  }`}
-                >
-                  <div className={`text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Paper Waste Reduction
-                  </div>
-                  <div
-                    className={`text-xl font-mono font-black mt-1 ${
-                      isDark ? 'text-emerald-400' : 'text-emerald-700'
-                    }`}
-                  >
-                    ~{paperRollsSavedMonth} Reams / Mo
-                  </div>
-                  <div className={`text-[10px] mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Digital QR check-out pass
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <span
-                  className={`text-xs ${
+                  Regulatory Governance
+                </h4>
+                <p
+                  className={`text-sm leading-relaxed ${
                     isDark ? 'text-slate-300' : 'text-slate-600'
                   }`}
                 >
-                  Ready to deploy with your existing hardware?
-                </span>
-                <button
-                  type="button"
-                  onClick={onNavigateToLogin}
-                  className={`px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-1.5 cursor-pointer ${
-                    isDark
-                      ? 'bg-teal-400 hover:bg-teal-300 text-slate-950'
-                      : 'bg-teal-700 hover:bg-teal-800 text-white shadow-xs'
-                  }`}
-                >
-                  <span>Application Sign In</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                  Captures consent and automates dynamic data anonymization to maintain statutory compliance with DPDP Act 2023 and ISO 27001.
+                </p>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Enterprise Architecture & Security Compliance */}
-      <section
-        id="compliance"
-        className={`py-16 border-b ${
-          isDark ? 'border-white/10 bg-[#0A111E]' : 'border-slate-200 bg-white'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-3 mb-12">
-            <h2
-              className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}
-            >
-              Enterprise Compliance & Data Governance Built-In
-            </h2>
-            <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Designed from the ground up for zero-trust physical security standards, statutory privacy compliance, and multi-cloud resilience.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div
-              className={`p-6 rounded-2xl border space-y-3 ${
-                isDark
-                  ? 'bg-[#101D30]/80 border-white/10'
-                  : 'bg-slate-50 border-slate-200 shadow-2xs'
-              }`}
-            >
+              {/* Card 2 */}
               <div
-                className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
+                className={`p-8 sm:p-10 rounded-2xl border transition-all duration-300 hover:shadow-xl ${
                   isDark
-                    ? 'bg-teal-500/20 border-teal-400/30 text-teal-300'
-                    : 'bg-teal-100 border-teal-300 text-teal-800'
+                    ? 'bg-[#0B1728] border-white/10'
+                    : 'bg-white border-slate-200/80 shadow-sm'
                 }`}
               >
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <h3
-                className={`text-base font-bold ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
-              >
-                DPDP Act 2023 Compliant
-              </h3>
-              <p
-                className={`text-xs leading-relaxed ${
-                  isDark ? 'text-slate-300' : 'text-slate-600'
-                }`}
-              >
-                Automated consent capture, dynamic data anonymization upon visitor checkout, and configurable retention periods to guarantee complete regulatory adherence.
-              </p>
-            </div>
-
-            <div
-              className={`p-6 rounded-2xl border space-y-3 ${
-                isDark
-                  ? 'bg-[#101D30]/80 border-white/10'
-                  : 'bg-slate-50 border-slate-200 shadow-2xs'
-              }`}
-            >
-              <div
-                className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
-                  isDark
-                    ? 'bg-indigo-500/20 border-indigo-400/30 text-indigo-300'
-                    : 'bg-indigo-100 border-indigo-300 text-indigo-800'
-                }`}
-              >
-                <Server className="w-5 h-5" />
-              </div>
-              <h3
-                className={`text-base font-bold ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
-              >
-                Zero-Trust Isolation
-              </h3>
-              <p
-                className={`text-xs leading-relaxed ${
-                  isDark ? 'text-slate-300' : 'text-slate-600'
-                }`}
-              >
-                Strict perimeter controls enforce least-privilege visitor routing. Visitors are strictly barred from unauthorized laboratory and server vault zones.
-              </p>
-            </div>
-
-            <div
-              className={`p-6 rounded-2xl border space-y-3 ${
-                isDark
-                  ? 'bg-[#101D30]/80 border-white/10'
-                  : 'bg-slate-50 border-slate-200 shadow-2xs'
-              }`}
-            >
-              <div
-                className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
-                  isDark
-                    ? 'bg-emerald-500/20 border-emerald-400/30 text-emerald-300'
-                    : 'bg-emerald-100 border-emerald-300 text-emerald-800'
-                }`}
-              >
-                <Database className="w-5 h-5" />
-              </div>
-              <h3
-                className={`text-base font-bold ${
-                  isDark ? 'text-white' : 'text-slate-900'
-                }`}
-              >
-                Google Sheets Real-Time Sync
-              </h3>
-              <p
-                className={`text-xs leading-relaxed ${
-                  isDark ? 'text-slate-300' : 'text-slate-600'
-                }`}
-              >
-                Live bidirectional audit streaming seamlessly links front desk logs into executive Google Sheets spreadsheets with zero latency.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Frequently Asked Questions */}
-      <section
-        id="faq"
-        className={`py-16 border-b ${
-          isDark
-            ? 'bg-[#0D1828]/80 border-white/10'
-            : 'bg-slate-100/70 border-slate-200'
-        }`}
-      >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3 mb-10">
-            <h2
-              className={`text-2xl font-extrabold tracking-tight ${
-                isDark ? 'text-white' : 'text-slate-900'
-              }`}
-            >
-              Frequently Asked Questions
-            </h2>
-            <p className={`text-xs sm:text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-              Clear answers regarding deployment, hardware compatibility, and day-to-day operations.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {faqs.map((faq, idx) => {
-              const isOpen = openFaq === idx;
-              return (
                 <div
-                  key={idx}
-                  className={`rounded-xl border overflow-hidden transition-all ${
-                    isDark
-                      ? 'border-white/10 bg-[#101D30]/90'
-                      : 'border-slate-200 bg-white shadow-2xs'
+                  style={{ ...monoStyle, fontSize: '14px' }}
+                  className="uppercase tracking-[0.18em] font-bold text-[#0F766E] dark:text-teal-400 mb-4"
+                >
+                  PERIMETER
+                </div>
+                <h4
+                  className={`text-lg font-bold mb-3 ${
+                    isDark ? 'text-white' : 'text-[#0F2942]'
                   }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaq(isOpen ? null : idx)}
-                    className={`w-full p-4 text-left flex items-center justify-between gap-4 text-xs font-bold transition-colors cursor-pointer ${
-                      isDark
-                        ? 'text-white hover:text-teal-300'
-                        : 'text-slate-900 hover:text-teal-700'
-                    }`}
-                  >
-                    <span>{faq.q}</span>
-                    <ChevronDown
-                      className={`w-4 h-4 shrink-0 transition-transform ${
-                        isOpen
-                          ? isDark
-                            ? 'rotate-180 text-teal-300'
-                            : 'rotate-180 text-teal-700'
-                          : isDark
-                          ? 'text-slate-400'
-                          : 'text-slate-500'
-                      }`}
-                    />
-                  </button>
-                  {isOpen && (
+                  Zero-Trust Isolation
+                </h4>
+                <p
+                  className={`text-sm leading-relaxed ${
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  }`}
+                >
+                  Rigid routing protocols ensure visitors are strictly barred from unauthorized laboratories, server rooms, and vault zones.
+                </p>
+              </div>
+
+              {/* Card 3 */}
+              <div
+                className={`p-8 sm:p-10 rounded-2xl border transition-all duration-300 hover:shadow-xl ${
+                  isDark
+                    ? 'bg-[#0B1728] border-white/10'
+                    : 'bg-white border-slate-200/80 shadow-sm'
+                }`}
+              >
+                <div
+                  style={{ ...monoStyle, fontSize: '14px' }}
+                  className="uppercase tracking-[0.18em] font-bold text-[#0F766E] dark:text-teal-400 mb-4"
+                >
+                  BIDIRECTIONAL
+                </div>
+                <h4
+                  className={`text-lg font-bold mb-3 ${
+                    isDark ? 'text-white' : 'text-[#0F2942]'
+                  }`}
+                >
+                  Sheets Real-Time Sync
+                </h4>
+                <p
+                  className={`text-sm leading-relaxed ${
+                    isDark ? 'text-slate-300' : 'text-slate-600'
+                  }`}
+                >
+                  Immediate data replication to cloud-based spreadsheets and relational PostgreSQL database for executive oversight.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Accordion FAQ (#faq) */}
+          <section id="faq" className={`py-14 sm:py-20 border-t ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+            <div className="max-w-3xl mx-auto">
+              <div
+                style={monoStyle}
+                className="text-[10px] sm:text-[11px] uppercase tracking-[0.2em] font-bold text-[#0F766E] dark:text-teal-400 mb-3"
+              >
+                INQUIRIES
+              </div>
+
+              <h2
+                style={{
+                  ...serifStyle,
+                  fontSize: '40px',
+                  height: '80px',
+                  paddingTop: '18px',
+                  paddingLeft: '60px',
+                }}
+                className={`text-3xl sm:text-5xl font-semibold mb-10 ${
+                  isDark ? 'text-white' : 'text-[#0F2942]'
+                }`}
+              >
+                Enterprise Common Questions
+              </h2>
+
+              <div className="space-y-4">
+                {faqs.map((faq, idx) => {
+                  const isOpen = openFaq === idx;
+                  return (
                     <div
-                      className={`px-4 pb-4 text-xs leading-relaxed border-t pt-2 ${
-                        isDark
-                          ? 'border-white/5 text-slate-300'
-                          : 'border-slate-100 text-slate-600'
+                      key={idx}
+                      className={`border-b pb-4 transition-colors ${
+                        isDark ? 'border-white/10' : 'border-slate-200'
                       }`}
                     >
-                      {faq.a}
+                      <button
+                        type="button"
+                        onClick={() => setOpenFaq(isOpen ? null : idx)}
+                        className={`w-full py-2 text-left flex items-center justify-between gap-4 font-semibold text-base sm:text-lg transition-colors cursor-pointer ${
+                          isDark
+                            ? 'text-white hover:text-teal-300'
+                            : 'text-[#0F2942] hover:text-[#0F766E]'
+                        }`}
+                      >
+                        <span>{faq.q}</span>
+                        <ChevronDown
+                          className={`w-4 h-4 shrink-0 transition-transform ${
+                            isOpen ? 'rotate-180 text-[#0F766E] dark:text-teal-400' : ''
+                          }`}
+                        />
+                      </button>
+                      {isOpen && (
+                        <p
+                          className={`pt-2 pb-1 text-sm sm:text-base font-normal leading-relaxed ${
+                            isDark ? 'text-slate-300' : 'text-slate-600'
+                          }`}
+                        >
+                          {faq.a}
+                        </p>
+                      )}
                     </div>
-                  )}
+                  );
+                })}
+              </div>
+
+              {/* Enterprise Direct Contact Card */}
+              <div
+                style={{
+                  height: '201.833px',
+                  width: '792px',
+                  maxWidth: '100%',
+                }}
+                className={`mt-10 p-6 sm:p-8 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-6 transition-colors shadow-lg ${
+                  isDark
+                    ? 'bg-[#0B1E38] border-teal-500/30 text-white'
+                    : 'bg-white border-slate-200/90 text-slate-900 shadow-sm'
+                }`}
+              >
+                <div>
+                  <div style={{ ...monoStyle, fontSize: '13px', fontWeight: 'bold' }} className="uppercase tracking-[0.2em] text-[#0F766E] dark:text-teal-400 mb-1">
+                    DIRECT ENTERPRISE LIAISON
+                  </div>
+                  <h3 style={serifStyle} className={`text-2xl sm:text-3xl font-semibold ${isDark ? 'text-white' : 'text-[#0F2942]'}`}>
+                    JS Alphasoft Private Limited
+                  </h3>
+                  <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>
+                    Connect with our deployment engineering team for custom hardware integrations, enterprise SLAs, and campus tenant provisioning.
+                  </p>
                 </div>
-              );
-            })}
-          </div>
+                <a
+                  href="mailto:info@jsalphasoft.com"
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-[#0F766E] hover:bg-teal-500 text-white font-bold text-xs tracking-wide transition-all shadow-md shrink-0 cursor-pointer active:scale-95"
+                >
+                  <Mail className="w-4 h-4 text-white" />
+                  <span>info@jsalphasoft.com</span>
+                </a>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
-
-      {/* Bottom Call to Action Banner */}
-      <section
-        className={`py-16 lg:py-20 border-b ${
-          isDark
-            ? 'bg-gradient-to-br from-[#0F2942] via-[#123B5D] to-[#0A1927] border-white/10'
-            : 'bg-gradient-to-br from-[#123B5D] via-[#0E2F4A] to-[#0A1927] text-white border-slate-300'
-        }`}
-      >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 border border-teal-400/30 text-teal-300 text-xs font-semibold">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Operational Facility Management Hub</span>
-          </div>
-
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-            Ready to Secure Your Campus Perimeter?
-          </h2>
-
-          <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-            Sign in with your designated credentials to access live front desk queues, badge printers, approval rosters, and facility administration.
-          </p>
-
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              type="button"
-              id="landing-bottom-cta-sign-in-btn"
-              onClick={onNavigateToLogin}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-sm shadow-xl shadow-teal-400/25 transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-            >
-              <Lock className="w-4 h-4" />
-              <span>Application Sign In</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
-              type="button"
-              id="landing-bottom-cta-pre-register-btn"
-              onClick={onNavigateToPublicPreRegister}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Share2 className="w-4 h-4 text-teal-300" />
-              <span>Visitor Pre-Registration Portal</span>
-            </button>
-          </div>
-        </div>
-      </section>
+      </main>
 
       {/* Footer */}
       <footer
-        className={`py-8 text-[11px] ${
-          isDark ? 'bg-[#070D18] text-slate-400' : 'bg-slate-900 text-slate-400'
+        className={`py-12 border-t transition-colors ${
+          isDark
+            ? 'bg-[#060D17] border-white/10 text-slate-400'
+            : 'bg-slate-50 border-slate-200 text-slate-700'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <JSAlphaSoftLogo forceDefaultBrand darkTheme size="sm" />
-            <span>© 2026 JS AlphaSoft Enterprises. All rights reserved.</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-6 text-xs">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 text-center sm:text-left">
+            <div style={serifStyle} className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#0F2942]'}`}>
+              JS Alphasoft Private Limited
+            </div>
+            <a
+              href="mailto:info@jsalphasoft.com"
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border transition-all text-xs font-medium cursor-pointer ${
+                isDark
+                  ? 'border-teal-500/30 bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 hover:text-white'
+                  : 'border-[#0F766E]/20 bg-[#0F766E]/5 text-[#0F766E] hover:bg-[#0F766E]/10 hover:border-[#0F766E]/40'
+              }`}
+              title="Send email to JS Alphasoft Private Limited"
+            >
+              <Mail className="w-3.5 h-3.5 text-[#0F766E] dark:text-teal-300" />
+              <span><strong className="font-semibold underline underline-offset-2">info@jsalphasoft.com</strong></span>
+            </a>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div style={monoStyle} className="text-[10px] tracking-wider uppercase font-semibold">
+            © 2026. ALL RIGHTS RESERVED.
+          </div>
+
+          <div className="flex gap-6 text-[11px] font-semibold" style={monoStyle}>
             <button
               type="button"
               onClick={onNavigateToLogin}
-              className="hover:text-teal-300 transition-colors cursor-pointer"
+              className={`transition-colors cursor-pointer ${isDark ? 'hover:text-teal-300 text-slate-400' : 'hover:text-[#0F766E] text-slate-600'}`}
             >
-              Application Sign In
+              PRIVACY POLICY
             </button>
-            <span>•</span>
             <button
               type="button"
               onClick={onNavigateToPublicPreRegister}
-              className="hover:text-teal-300 transition-colors cursor-pointer"
+              className={`transition-colors cursor-pointer ${isDark ? 'hover:text-teal-300 text-slate-400' : 'hover:text-[#0F766E] text-slate-600'}`}
             >
-              Visitor Self Pre-Registration
+              SECURITY PROTOCOLS
             </button>
-            <span>•</span>
-            <span>Zero-Trust Facility Security</span>
           </div>
         </div>
       </footer>

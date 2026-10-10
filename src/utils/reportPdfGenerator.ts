@@ -33,7 +33,7 @@ export function generateVisitorLogsPdf(
   doc.setFontSize(8.5);
   doc.setTextColor(180, 220, 240);
   doc.text(
-    `JS ALPHASOFT ENTERPRISE VMS • FACILITY: ${site.name.toUpperCase()} • GENERATED: ${new Date().toLocaleString()}`,
+    `JS ALPHASOFT PRIVATE LIMITED • FACILITY: ${site.name.toUpperCase()} • GENERATED: ${new Date().toLocaleString()}`,
     14,
     18
   );
@@ -273,7 +273,7 @@ export function generateAuditTrailPdf(
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(148, 163, 184);
   doc.text(
-    `CRYPTOGRAPHIC LOG AUDIT • SOC2 & ISO27001 COMPLIANT • SHA256-CORRELATION VERIFIED • JS ALPHASOFT`,
+    `CRYPTOGRAPHIC LOG AUDIT • SOC2 & ISO27001 COMPLIANT • SHA256-CORRELATION VERIFIED • JS ALPHASOFT PRIVATE LIMITED`,
     pageWidth / 2,
     pageHeight - 8,
     { align: 'center' }
